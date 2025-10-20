@@ -1,0 +1,45 @@
+.Accueil {
+    #boutonSeConnecter {
+        color: var(--text-blanc);
+    }
+    #divRechercheActions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        input {
+            text-align: center;
+        }
+        #divPresentationAction {
+            width: 400px;
+
+            margin-top: 8px;
+            #divAction {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                padding: 10px 5px;
+                .pNom {
+                    font-weight: bold;
+                }
+                .pTicker {
+                    margin-top: 2px;
+                    font-size: 0.8em;
+                }
+            }
+            #divAction.ligneClaire {
+                border: 1px solid var(--zebra-claire);
+                background-color: var(--zebra-claire);
+            }
+            #divAction.ligneSombre {
+                border: 1px solid var(--zebra-sombre);
+
+                background-color: var(--zebra-sombre);
+            }
+            #divAction.ligneSelectionnee {
+                border: 1px solid #fff;
+                align-items: center;
+            }
+        }
+    }
+}

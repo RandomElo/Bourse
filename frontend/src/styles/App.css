@@ -1,0 +1,107 @@
+:root {
+    --bg-color: #fff;
+    --text-color: #000;
+    --text-blanc: #fff;
+    --toggle-bg: #1a1a1a;
+    --toggle-thumb: #fff;
+    --zebra-claire: #f2f2f2;
+    --zebra-sombre: #ffffff;
+}
+
+.darkMode {
+    --bg-color: #1e1e1e;
+    --text-color: #e0e0e0;
+    --text-blanc: #e0e0e0;
+    --toggle-bg: #444;
+    --toggle-thumb: #ddd;
+    --zebra-claire: #2b2b2b;
+    --zebra-sombre: #1e1e1e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+    text-decoration: none;
+}
+
+body {
+    background: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.navbar a {
+    color: var(--text-color);
+}
+
+/* Classes génériques */
+#titre {
+    text-align: center;
+}
+
+.gras {
+    font-weight: bold;
+}
+
+.souligner {
+    text-decoration: underline;
+}
+
+/* Gestion des éléments */
+.bouton {
+    background-color: #41454b;
+    padding: 12px;
+    padding-left: 22px;
+    padding-right: 22px;
+}
+.input {
+    border: 2px solid #f2f2f2;
+    outline: none;
+    margin-top: 8px;
+    padding-left: 10px;
+
+    height: 31px;
+    border-radius: 5px;
+}
+/* .input:focus {
+    border-color: #0185fe;
+} */
+/* Gestion du theme sobmre */
+.darkMode {
+    input {
+        background-color: #2c2f33;
+        color: var(--text-color);
+    }
+}
+/* Gestion de la navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 30px;
+}
+.navbar .logo {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+.navLinks.mobile-menu {
+    margin-left: 0;
+}
+
+.navbar .navLinks .active {
+    text-decoration: underline;
+}
+
+.navbar a:hover {
+    text-decoration: underline;
+}
+.navbar .navLinks ul {
+    display: flex;
+    align-items: center;
+}
+.navbar .navLinks ul li {
+    margin: 0 20px;
+    list-style: none;
+}

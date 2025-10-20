@@ -1,0 +1,112 @@
+.Identification {
+    width: 269px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 19px;
+    border: 1px solid black;
+    border-radius: 20px;
+
+    #titre {
+        font-size: 24px;
+        text-align: center;
+    }
+    .ligneSeparation {
+        width: 100%;
+        height: 2px;
+        background-color: #f2f2f2;
+        margin-top: 20px;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+
+        input::placeholder {
+            /* Semi bold */
+            font-weight: bold;
+            color: #a6a6a6;
+        }
+
+        #divChamps {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        #divInputMdp {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            input {
+                flex: 1;
+                box-sizing: border-box;
+                padding-left: 10px;
+            }
+            svg {
+                position: absolute;
+                right: 8px;
+                top: 11px;
+                cursor: pointer;
+            }
+        }
+
+        #divErreurFormulaire {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            #pErreur {
+                margin-left: 10px;
+                font-size: 0.85em;
+                font-weight: bold;
+            }
+            svg {
+                display: block;
+                width: 24px;
+                height: 24px;
+            }
+        }
+
+        button {
+            width: 100%;
+            height: 31px;
+
+            margin-top: 20px;
+            color: #fff;
+            background-color: #0085ff;
+            /* semi bold */
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+    }
+    #divChangementModeAuthentification {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        p {
+            margin-top: 20px;
+            margin-bottom: 6px;
+            color: #999999;
+            /* semi bold */
+            font-weight: bold;
+        }
+        a {
+            color: #0085ff;
+            /* semi bold */
+            font-weight: bold;
+        }
+    }
+}
+.darkMode .Identification {
+    border-color: var(--text-color);
+    border-color: var(--text-color);
+}

@@ -1,0 +1,44 @@
+import { useEffect, useState } from "react";
+import "../styles/ToogleTheme.css";
+
+export default function ToggleTheme() {
+    const [dark, setDark] = useState<boolean>(() => {
+        const stored = localStorage.getItem("dark");
+        if (stored !== null) return JSON.parse(stored);
+        return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    });
+
+    // ⚡ Gestion du thème (ajout/retrait de la classe sur <html>)
+    useEffect(() => {
+        document.documentElement.classList.toggle("darkMode", dark);
+        localStorage.setItem("dark", JSON.stringify(dark));
+    }, [dark]);
+
+    // 👂 Écoute du changement du thème système
+    useEffect(() => {
+        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        const listener = (event: MediaQueryListEvent) => setDark(event.matches);
+        mediaQuery.addEventListener("change", listener);
+        return () => mediaQuery.removeEventListener("change", listener);
+    }, []);
+
+    return (
+        <button type="button" className="toggleTrack" title={dark ? "Light mode" : "Dark mode"} onClick={() => setDark((prev) => !prev)}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="toggleMoon" aria-hidden="true" focusable="false" role="img" viewBox="0 0 20 20" fill="currentColor" style={{ opacity: dark ? 1 : 0.3, transition: "opacity 0.3s" }}>
+                <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
+            </svg>
+
+            <svg xmlns="http://www.w3.org/2000/svg" className="toggleSun" aria-hidden="true" focusable="false" role="img" viewBox="0 0 20 20" fill="currentColor" style={{ opacity: dark ? 0.3 : 1, transition: "opacity 0.3s" }}>
+                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+            </svg>
+
+            <div
+                className="toggleThumb"
+                style={{
+                    transform: dark ? "translateX(47px)" : "translateX(0)",
+                    transition: "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)",
+                }}
+            ></div>
+        </button>
+    );
+}

@@ -1,0 +1,18 @@
+.ChampDonneesForm {
+    width: 247px;
+    height: 54px;
+
+    display: flex;
+    flex-direction: column;
+
+    label {
+        width: 247px;
+        height: 15px;
+        /* je veut du semi bold */
+        font-weight: bold;
+    }
+
+    .input:focus {
+        border-color: #0185fe;
+    }
+}
