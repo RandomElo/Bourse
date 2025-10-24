@@ -13,12 +13,13 @@ import routeurBourse from "./routeurs/bourse.js";
 
 dotenv.config();
 
-const { IP_FRONTEND, PORT_EXPRESS } = process.env;
+const { IP_FRONTEND, PORT_EXPRESS, MODE } = process.env;
 
 const app = e();
 
 app.use(
     cors({
+        // origin: MODE === "developpement" ? "*" : IP_FRONTEND,
         origin: IP_FRONTEND,
         methods: ["GET", "POST", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],

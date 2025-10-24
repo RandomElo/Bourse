@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useErreur } from "../../contexts/ErreurContext";
 import useFavicon from "../../fonctions/gestionFavicon";
 import ToggleTheme from "../../composants/toogleTheme";
+
 export default function Generale({ children }: { children?: ReactNode }) {
     const { erreur, setErreur } = useErreur();
     const { estAuth, chargement } = useAuth();

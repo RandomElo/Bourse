@@ -12,7 +12,26 @@ export default function (bdd) {
             allowNull: false,
         },
         ticker: {
-            type: DataTypes.STRING(255),
+            type: DataTypes.STRING(30),
+            allowNull: false,
+        },
+        placeCotation: {
+            type: DataTypes.STRING(30),
+        },
+        secteur: {
+            type: DataTypes.STRING(30),
+        },
+        industrie: {
+            type: DataTypes.STRING(30),
+        },
+        ouverture: {
+            type: DataTypes.TIME,
+        },
+        fermeture: {
+            type: DataTypes.TIME,
+        },
+        devise: {
+            type: DataTypes.STRING(5),
             allowNull: false,
         },
     });

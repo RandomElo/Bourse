@@ -1,22 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useRequete } from "../fonctions/requete";
 
 import "../styles/Accueil.css";
 import { NavLink } from "react-router-dom";
 import { CornerDownLeft } from "lucide-react";
+import PresentationAction from "../composants/PresentationAction";
 
 export default function Accueil() {
     const requete = useRequete();
     const { estAuth } = useAuth();
     const [indexSelectionner, setIndexSelectionner] = useState(-1);
-    const [listeActions, setListeActions] = useState<[{ nom: string; ticker: string }] | []>([]);
+    const [listeActions, setListeActions] = useState<[{ nom: string; ticker: string; place: string; rendementJourPourcentage: number; prix: string }] | []>([]);
     const [action, setAction] = useState<string | null>(null);
+
+    const debounceTimeout = useRef<number | null>(null);
+    const refInputRecherche = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         document.title = "Accueil - Bourse";
     }, []);
 
+    // Permet de détecter l'appui sur des touches
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "ArrowDown") {
@@ -25,11 +30,39 @@ export default function Accueil() {
                 setIndexSelectionner((prev) => Math.max(prev - 1, 0));
             } else if (e.key === "Enter") {
                 setAction(listeActions[indexSelectionner].ticker);
+            } else if (e.key == "Escape") {
+                refInputRecherche.current?.focus();
+                setListeActions([]);
+                setAction(null);
             }
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [listeActions, indexSelectionner]);
+    }, [listeActions, indexSelectionner, action]);
+
+    const rechercheInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setAction(null);
+        setIndexSelectionner(-1);
+        const value = e.target.value;
+
+        // On annule le debounce précédent
+        if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+
+        // On lance une nouvelle recherche après 500ms d'inactivité
+        debounceTimeout.current = setTimeout(async () => {
+            if (value !== "") {
+                try {
+                    const reponse = await requete({ url: "/bourse/recherche-action/" + value });
+                    setListeActions(reponse);
+                } catch (err) {
+                    console.error("Erreur recherche :", err);
+                    setListeActions([]);
+                }
+            } else {
+                setListeActions([]);
+            }
+        }, 500); // délai de 500ms
+    };
 
     return (
         <main className="Accueil">
@@ -46,35 +79,37 @@ export default function Accueil() {
                 <>
                     <h1 id="titre">Auth</h1>
                     <div id="divRechercheActions">
-                        <input
-                            type="text"
-                            className="input"
-                            placeholder="Rechercher une action"
-                            onInput={async (e) => {
-                                const element = e.target as HTMLInputElement;
-                                if (element.value !== "") {
-                                    const reponse = await requete({ url: "/bourse/recherche-action/" + element.value });
-                                    setListeActions(reponse);
-                                } else {
-                                    setListeActions([]);
-                                }
-                            }}
-                        />
+                        <input type="text" className="input" placeholder="Rechercher une action" onChange={rechercheInput} ref={refInputRecherche} />
                         {listeActions.length !== 0 && (
-                            <div id="divPresentationAction">
-                                {listeActions.map((action, index) => (
-                                    <div id="divAction" key={index} className={`${index % 2 === 0 ? "ligneClaire" : "ligneSombre"} ${index === indexSelectionner ? "ligneSelectionnee" : ""}`}>
-                                        <div>
-                                            <p className="pNom">{action.nom}</p>
-                                            <p className="pTicker">{action.ticker}</p>
-                                        </div>
-                                        {index === indexSelectionner && <CornerDownLeft />}
-                                    </div>
-                                ))}
-                            </div>
+                            <table id="tableauPresentationAction">
+                                <tbody>
+                                    {listeActions.map((action, index) => (
+                                        <tr key={index} className={`${index % 2 === 0 ? "ligneClaire" : "ligneSombre"} ${index === indexSelectionner ? "ligneSelectionnee" : ""}`} onClick={() => setIndexSelectionner(index)}>
+                                            <td className="tdPresentation">
+                                                <p className="nom">{action.nom}</p>
+                                                <p className="detail">
+                                                    {action.ticker}
+                                                    {action.place && " - ( " + action.place + " )"}
+                                                </p>
+                                            </td>
+                                            <td className="tdChiffres">
+                                                <p className="prix">{action.prix}</p>
+                                                <p className={`rendement ${action.rendementJourPourcentage > 0 ? "positif" : "negatif"}`}>{`${action.rendementJourPourcentage > 0 ? "+ " : "- "}${Math.abs(action.rendementJourPourcentage)} %`}</p>
+                                            </td>
+
+                                            <td className="tdIcone">{index === indexSelectionner && <CornerDownLeft />}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         )}
                     </div>
-                    {action && <div id="divPresentationAction">{listeActions[indexSelectionner].nom}</div>}
+                    {action && (
+                        <PresentationAction ticker={action} />
+                        // <div id="divPresentationAction">
+                        //     <GraphiqueBourse ticker={action} />
+                        // </div>
+                    )}
                 </>
             )}
         </main>

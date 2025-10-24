@@ -50,7 +50,9 @@ body {
 
 /* Gestion des éléments */
 .bouton {
+    color: var(--text-blanc);
     background-color: #41454b;
+    cursor: pointer;
     padding: 12px;
     padding-left: 22px;
     padding-right: 22px;

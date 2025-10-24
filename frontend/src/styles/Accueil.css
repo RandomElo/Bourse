@@ -10,35 +10,67 @@
         input {
             text-align: center;
         }
-        #divPresentationAction {
-            width: 400px;
-
+        #tableauPresentationAction {
+            width: 650px;
             margin-top: 8px;
-            #divAction {
-                width: 100%;
-                display: flex;
-                justify-content: space-between;
-                padding: 10px 5px;
-                .pNom {
-                    font-weight: bold;
-                }
-                .pTicker {
-                    margin-top: 2px;
-                    font-size: 0.8em;
-                }
+            border-collapse: collapse;
+
+            tr {
+                height: 65px;
+                cursor: pointer;
             }
-            #divAction.ligneClaire {
-                border: 1px solid var(--zebra-claire);
+
+            tr.ligneClaire {
+                /* border: 1px solid var(--zebra-claire); */
                 background-color: var(--zebra-claire);
             }
-            #divAction.ligneSombre {
-                border: 1px solid var(--zebra-sombre);
+
+            tr.ligneSombre {
+                /* border: 1px solid var(--zebra-sombre); */
 
                 background-color: var(--zebra-sombre);
             }
-            #divAction.ligneSelectionnee {
-                border: 1px solid #fff;
-                align-items: center;
+
+            tr.ligneSelectionnee {
+                outline: 1px solid #fff; /* contour visible même avec border-collapse */
+                outline-offset: -1px; /* pour ne pas agrandir visuellement la ligne */
+            }
+
+            td {
+                padding-top: 12px;
+                padding-bottom: 12px;
+                vertical-align: middle;
+            }
+
+            .tdPresentation {
+                display: flex;
+                flex-direction: column;
+                padding-left: 28px;
+
+                .nom {
+                    font-weight: bold;
+                }
+                .detail {
+                    font-size: 0.8em;
+                    margin-top: 2px;
+                }
+            }
+            .tdChiffres {
+                width: 90px;
+                .rendement {
+                    font-weight: bold;
+                    margin-top: 2px;
+                }
+                .positif {
+                    color: green;
+                }
+                .negatif {
+                    color: red;
+                }
+            }
+            .tdIcone {
+                width: 24px;
+                padding-right: 4px;
             }
         }
     }
