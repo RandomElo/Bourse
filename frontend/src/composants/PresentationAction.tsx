@@ -6,6 +6,7 @@ import "../styles/composants/PresentationAction.css";
 import GraphiqueBourse from "./GraphiqueBourse";
 import Chargement from "./Chargement";
 import Modal from "./Modal";
+import ChampDonneesForm from "./ChampDonneesForm";
 export default function PresentationAction({ ticker }: { ticker: string }) {
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
     const [contenuModal, setContenuModal] = useState<ReactNode>(<div></div>);
@@ -97,10 +98,9 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                                                 <div id="divCreationPortefeuille">
                                                     <h2>Création de portefeuille</h2>
                                                     <form>
-                                                        <label htmlFor="labelNomPortefeuille">Nom : </label>
-                                                        <input type="text" id="labelNomPortefeuille" className="input" />
+                                                        <ChampDonneesForm id="champNom" label="Nom" />
 
-                                                        <button type="submit">Crée</button>
+                                                        <button type="submit" id="boutonCreePortefeuille">Crée</button>
                                                     </form>
                                                 </div>
                                             );
