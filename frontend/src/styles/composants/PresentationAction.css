@@ -1,0 +1,72 @@
+.PresentationAction {
+    /* border: 1px solid black; */
+    width: 1000px;
+    margin: 40px auto 0 auto;
+
+    #divHeader {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+
+        #divIdentifiantAction {
+            #pTicker {
+                font-size: 0.9em;
+            }
+        }
+    }
+    #divPrix {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+
+        #pPrixAction {
+            font-size: 2.25em;
+        }
+        #pRendementAction {
+            display: flex;
+            align-items: center;
+            height: 25px;
+
+            margin-left: 10px;
+            padding: 5px 7px;
+
+            font-size: 1.2em;
+            border-radius: 8px;
+        }
+        #pRendementAction.positif {
+            color: #137333;
+            background-color: #e6f4ea;
+        }
+        #pRendementAction.negatif {
+            color: #a50e0e;
+            background-color: #fce8e6;
+        }
+    }
+
+    #divChoixEtenduGraphique {
+        margin: 5px auto;
+        .aDuree {
+            position: relative;
+            margin-right: 18px;
+            padding: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .aDuree:hover {
+            background-color: #f7f8f8;
+        }
+
+        .aDuree.selectionnee::after {
+            content: "";
+            position: absolute;
+            left: 5px;
+            bottom: -2px; /* distance sous le texte */
+            width: calc(100% - 10px);
+            height: 2px;
+            background: currentColor; /* même couleur que le texte */
+            border-radius: 2px;
+        }
+    }
+
+}

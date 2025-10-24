@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import "../styles/ToogleTheme.css";
+import "../styles/composants/ToogleTheme.css";
 
 export default function ToggleTheme() {
     const [dark, setDark] = useState<boolean>(() => {

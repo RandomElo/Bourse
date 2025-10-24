@@ -1,5 +1,5 @@
 import { Eye, EyeOff } from "lucide-react";
-import "../styles/ChampDonneesForm.css";
+import "../styles/composants/ChampDonneesForm.css";
 import { useState } from "react";
 export default function ChampDonneesForm({ id, label, typeInput = "text", placeholder, onBlur }: { id: string; label: string; placeholder?: string; typeInput?: "text" | "password"; onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void }) {
     const [afficherMdp, setAfficherMdp] = useState<boolean>(false);

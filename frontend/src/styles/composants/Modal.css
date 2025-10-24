@@ -1,0 +1,47 @@
+.Modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+
+    .modalContenu {
+        background: #fff;
+        width: 400px;
+        padding: 2rem;
+        border-radius: 12px;
+        position: relative;
+        box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.15);
+        animation: fadeIn 0.5s ease;
+    }
+
+    .Modal h1 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+    }
+
+    .boutonFermer {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        cursor: pointer;
+        color: #888;
+    }
+
+    .boutonFermer:hover {
+        color: #000;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

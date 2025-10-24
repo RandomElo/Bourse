@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as d3 from "d3";
-import { useRequete } from "../fonctions/requete";
 
 // ------------------------------
 // 🧠 1️⃣ Typage des données et props
@@ -23,8 +22,8 @@ interface DonneesGraphique {
 interface TestProps {
     width?: number;
     height?: number;
-    donnees: DonneesGraphique | undefined;
-    duree: "1j" | "5j" | "1m" | "6m" | "1a" | "5a" | "max";
+    donnees: DonneesGraphique;
+    duree: "1 j" | "5 j" | "1 m" | "6 m" | "1 a" | "5 a" | "MAX";
 }
 export default function GraphiqueBourse({ width = 800, height = 400, donnees, duree }: TestProps) {
     // ------------------------------
@@ -37,7 +36,6 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
     const [fermeture, setFermeture] = useState<Date | null>(null); // Heure de fermeture du marché
     const [devise, setDevise] = useState<string | null>(null); // Devise
     const [themeSombre, setThemeSombre] = useState<boolean>(false);
-    const [erreur, setErreur] = useState<string>("");
     const svgRef = useRef<SVGSVGElement | null>(null); // Référence vers le SVG D3
 
     // ------------------------------
@@ -94,7 +92,7 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
         const svg = d3.select(svgRef.current);
         svg.selectAll("*").remove();
 
-        const margin = { top: 20, right: 50, bottom: 30, left: 50 };
+        const margin = { top: 20, right: 30, bottom: 30, left: 30 };
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
 
@@ -103,19 +101,8 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
         // ------------------------------
         // X Scale
         // ------------------------------
-        let xData: Donnee[];
-        if (duree === "1j" && ouverture && fermeture) {
-            xData = data; // Intraday
-        } else {
-            // Multi-jours : on garde tous les points pour tracer correctement les jours
-            xData = data;
-        }
+        const xData = data;
 
-        const xDomain = d3.extent(xData, (d) => d.date) as [Date, Date];
-        // const xScale = d3.scaleTime().domain(xDomain).range([0, innerWidth]);
-
-        // On ne veut plus de scaleTime qui garde les trous
-        // On crée une échelle linéaire basée sur l’index des points
         const xScale = d3
             .scaleLinear()
             .domain([0, xData.length - 1])
@@ -134,11 +121,6 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
         // ------------------------------
         // Ligne principale
         // ------------------------------
-        // const line = d3
-        //     .line<Donnee>()
-        //     .x((d) => xScale(d.date))
-        //     .y((d) => yScale(d.value!))
-        //     .curve(d3.curveMonotoneX);
 
         const line = d3
             .line<Donnee>()
@@ -146,26 +128,6 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
             .y((d) => yScale(d.value!))
             .curve(d3.curveMonotoneX);
 
-        // if (duree === "1j") {
-        //     // Intraday : une seule ligne
-        //     g.append("path")
-        //         .datum(xData)
-        //         .attr("fill", "none")
-        //         .attr("stroke", (xData.at(-1)?.value ?? 0) >= (xData.at(0)?.value ?? 0) ? "green" : "red")
-        //         .attr("stroke-width", 2)
-        //         .attr("d", line);
-        // } else {
-        //     // Multi-jours : une ligne par jour
-        //     const dataByDay = d3.group(xData, (d) => d.date.toISOString().slice(0, 10));
-        //     dataByDay.forEach((points) => {
-        //         g.append("path")
-        //             .datum(points)
-        //             .attr("fill", "none")
-        //             .attr("stroke", (points.at(-1)?.value ?? 0) >= (points.at(0)?.value ?? 0) ? "green" : "red")
-        //             .attr("stroke-width", 2)
-        //             .attr("d", line);
-        //     });
-        // }
         g.append("path")
             .datum(xData)
             .attr("fill", "none")
@@ -177,24 +139,16 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
         // Axe X
         // ------------------------------
         let formatTickX: (date: Date) => string;
-        if (duree === "1j") {
+        if (duree === "1 j") {
             formatTickX = d3.timeFormat("%H:%M");
-        } else if (["5j", "1m"].includes(duree)) {
+        } else if (["5 j", "1 m"].includes(duree)) {
             formatTickX = d3.timeFormat("%d %b");
-        } else if (["6m", "1a"].includes(duree)) {
+        } else if (["6 m", "1 a"].includes(duree)) {
             formatTickX = d3.timeFormat("%b");
         } else {
             formatTickX = d3.timeFormat("%Y");
         }
 
-        // g.append("g")
-        //     .attr("transform", `translate(0,${innerHeight})`)
-        //     .call(
-        //         d3
-        //             .axisBottom(xScale)
-        //             .ticks(6)
-        //             .tickFormat((d) => formatTickX(d as Date) as string)
-        //     );
         const tickCount = 6;
         const tickIndexes = d3.range(0, xData.length, Math.floor(xData.length / tickCount));
 
@@ -218,10 +172,6 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
             if (startValue) {
                 setStartValue(null);
             } else {
-                // const [x] = d3.pointer(event);
-                // const closest = data.reduce((prev, curr) => (Math.abs(xScale(curr.date) - x) < Math.abs(xScale(prev.date) - x) ? curr : prev));
-                // setStartValue(closest as { date: Date; value: number });
-
                 const [x] = d3.pointer(event);
                 const closestIndex = Math.round(xScale.invert(x));
                 const clampedIndex = Math.max(0, Math.min(data.length - 1, closestIndex));
@@ -231,9 +181,6 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
         });
 
         overlay.on("mousemove", (event) => {
-            // const [x] = d3.pointer(event);
-            // const closest = data.reduce((prev, curr) => (Math.abs(xScale(curr.date) - x) < Math.abs(xScale(prev.date) - x) ? curr : prev));
-            // setHoverData(closest);
             const [x] = d3.pointer(event);
             const closestIndex = Math.round(xScale.invert(x));
             const clampedIndex = Math.max(0, Math.min(data.length - 1, closestIndex));
@@ -254,14 +201,10 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
         // Tooltip
         // ------------------------------
         if (hoverData && hoverData.value != null) {
-            // const hoverX = xScale(hoverData.date);
-            // const hoverY = yScale(hoverData.value);
-            
             const index = data.findIndex((d) => d.date.getTime() === hoverData.date.getTime());
             if (index === -1) return; // Sécurité si le point n’existe pas
             const hoverX = xScale(index);
             const hoverY = yScale(hoverData.value);
-
 
             g.selectAll(".tooltip-group").remove();
             const tooltipGroup = g.append("g").attr("class", "tooltip-group");
@@ -281,16 +224,40 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
 
             let lignes: string[] = [];
             if (startValue !== null) {
+                let plageDate;
+
+                if (startValue.date > hoverData.date) {
+                    plageDate = `${formatHeure(hoverData.date)} - ${formatHeure(startValue.date)}`;
+                } else {
+                    plageDate = `${formatHeure(startValue.date)} - ${formatHeure(hoverData.date)}`;
+                }
+
                 const comparaisonPrix = hoverData.value - startValue.value;
                 const delta = (comparaisonPrix / startValue.value) * 100;
-                lignes.push(`${comparaisonPrix > 0 ? " + " : "- "}${Math.abs(comparaisonPrix).toFixed(2)} (${delta.toFixed(2)}%)`, `${formatHeure(startValue.date)}-${formatHeure(hoverData.date)}`);
+                lignes.push(`${comparaisonPrix > 0 ? " + " : "- "}${Math.abs(comparaisonPrix).toFixed(2)} (${delta.toFixed(2)}%)`, plageDate);
             } else {
-                lignes = [`${formatHeure(hoverData.date)}`, `${hoverData.value.toFixed(2)} ${devise}`];
+                if (duree !== "1 j" && duree !== "5 j") {
+                    const date = hoverData.date;
+                    const dateFormatee = date.getDate() + " " + moisListe[date.getMonth()] + ". " + date.getFullYear();
+
+                    lignes = [`${hoverData.value.toFixed(2)} ${devise}`, dateFormatee];
+                } else {
+                    lignes = [`${hoverData.value.toFixed(2)} ${devise}`, `${formatHeure(hoverData.date)}`];
+                }
             }
 
             const fontSizeMain = 14;
             const lineHeight = 20;
-            const largeur = startValue ? 230 : 150;
+            let largeur = 0;
+
+            if (startValue) {
+                largeur = 230;
+            } else if (duree == "1 j" || duree == "5 j") {
+                largeur = 117;
+            } else {
+                largeur = 95;
+            }
+            // const largeur = startValue ? 230 : 150;
             const hauteur = lignes.length * lineHeight + 10;
             let tooltipX = hoverX + 10;
             let tooltipY = hoverY - hauteur - 10;
@@ -308,7 +275,10 @@ export default function GraphiqueBourse({ width = 800, height = 400, donnees, du
                     .attr("fill", "white")
                     .attr("font-size", fontSizeMain);
 
-                if (txt.length < 15 || txt.endsWith("%)")) textEl.attr("font-weight", "bold");
+                if (txt.endsWith("%)") || txt.split(" ").length == 2) {
+                    textEl.attr("font-weight", "bold");
+                }
+
                 if (txt.includes(")")) {
                     textEl.attr("fill", Number(txt.split("(")[1].replace(")", "").replace("%", "")) > 0 ? (themeSombre ? "palegreen" : "mediumseagreen") : "red");
                 }

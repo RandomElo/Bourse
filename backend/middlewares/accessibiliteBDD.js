@@ -1,6 +1,6 @@
 export const accesibliteBDD = (bdd) => {
     return (req, res, next) => {
-        const { sequelize, Utilisateur, Erreur, Action, HistoriquePrix, PlaceCotation } = bdd;
+        const { sequelize, Utilisateur, Erreur, Action, HistoriquePrix, PlaceCotation, Portefeuille, Transaction } = bdd;
 
         req.Sequelize = sequelize;
         req.Utilisateur = Utilisateur;
@@ -8,6 +8,8 @@ export const accesibliteBDD = (bdd) => {
         req.Action = Action;
         req.HistoriquePrix = HistoriquePrix;
         req.PlaceCotation = PlaceCotation;
+        req.Portefeuille = Portefeuille;
+        req.Transaction = Transaction;
 
         next();
     };

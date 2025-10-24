@@ -29,7 +29,10 @@ export default function Accueil() {
             } else if (e.key === "ArrowUp") {
                 setIndexSelectionner((prev) => Math.max(prev - 1, 0));
             } else if (e.key === "Enter") {
-                setAction(listeActions[indexSelectionner].ticker);
+                if (listeActions[indexSelectionner]?.ticker) {
+                    setAction(listeActions[indexSelectionner].ticker);
+                    setListeActions([]);
+                }
             } else if (e.key == "Escape") {
                 refInputRecherche.current?.focus();
                 setListeActions([]);
@@ -78,6 +81,7 @@ export default function Accueil() {
             ) : (
                 <>
                     <h1 id="titre">Auth</h1>
+
                     <div id="divRechercheActions">
                         <input type="text" className="input" placeholder="Rechercher une action" onChange={rechercheInput} ref={refInputRecherche} />
                         {listeActions.length !== 0 && (
@@ -103,13 +107,8 @@ export default function Accueil() {
                                 </tbody>
                             </table>
                         )}
+                        {action && <PresentationAction ticker={action} />}
                     </div>
-                    {action && (
-                        <PresentationAction ticker={action} />
-                        // <div id="divPresentationAction">
-                        //     <GraphiqueBourse ticker={action} />
-                        // </div>
-                    )}
                 </>
             )}
         </main>

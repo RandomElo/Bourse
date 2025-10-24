@@ -10,6 +10,7 @@ import { accesibliteBDD } from "./middlewares/accessibiliteBDD.js";
 import bdd from "./bdd/bdd.js";
 import { verificationCookie } from "./middlewares/verificationCookie.js";
 import routeurBourse from "./routeurs/bourse.js";
+import routeurPortefeuille from "./routeurs/portefeuille.js";
 
 dotenv.config();
 
@@ -21,7 +22,7 @@ app.use(
     cors({
         // origin: MODE === "developpement" ? "*" : IP_FRONTEND,
         origin: IP_FRONTEND,
-        methods: ["GET", "POST", "DELETE"],
+        methods: ["GET", "POST", "PUT", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true,
     })
@@ -35,5 +36,6 @@ app.use(verificationCookie);
 
 app.use("/utilisateur", routeurUtilisateur);
 app.use("/bourse", routeurBourse);
+app.use("/portefeuille", routeurPortefeuille);
 
 app.listen(PORT_EXPRESS, () => console.log("Serveur démarré => port " + PORT_EXPRESS));

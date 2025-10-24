@@ -4,6 +4,8 @@ import Erreur from "./modeles/Erreur.js";
 import fs from "fs";
 import Action from "./modeles/Action.js";
 import HistoriquePrix from "./modeles/HistoriquePrix.js";
+import Portefeuille from "./modeles/Portefeuille.js";
+import Transaction from "./modeles/Transaction.js";
 
 const cheminBDD = "./bdd/bdd.sqlite";
 
@@ -22,11 +24,22 @@ const bdd = {
     Erreur: Erreur(sequelize),
     Action: Action(sequelize),
     HistoriquePrix: HistoriquePrix(sequelize),
+    Portefeuille: Portefeuille(sequelize),
+    Transaction: Transaction(sequelize),
 };
 
 // Définitions des relations
-bdd.Action.hasMany(bdd.HistoriquePrix, { foreignKey: "actionId", onDelete: "CASCADE" });
-bdd.HistoriquePrix.belongsTo(bdd.Action, { foreignKey: "actionId" });
+bdd.Action.hasMany(bdd.HistoriquePrix, { foreignKey: "idAction", onDelete: "CASCADE" });
+bdd.HistoriquePrix.belongsTo(bdd.Action, { foreignKey: "idAction" });
+
+bdd.Action.hasMany(bdd.Transaction, { foreignKey: "idAction", onDelete: "CASCADE" });
+bdd.Transaction.belongsTo(bdd.Action, { foreignKey: "idAction" });
+
+bdd.Portefeuille.hasMany(bdd.Transaction, { foreignKey: "idPortefeuille", onDelete: "CASCADE" });
+bdd.Transaction.belongsTo(bdd.Portefeuille, { foreignKey: "idPortefeuille" });
+
+bdd.Utilisateur.hasMany(bdd.Portefeuille, { foreignKey: "idUtilisateur", onDelete: "CASCADE" });
+bdd.Portefeuille.belongsTo(bdd.Utilisateur, { foreignKey: "idUtilisateur" });
 
 const existanceBdd = fs.existsSync(cheminBDD);
 if (!existanceBdd) {
