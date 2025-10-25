@@ -26,3 +26,20 @@ export const recupererListe = gestionErreur(
     "controleurRecupererListePortefeuille",
     "Erreur lors de la récupération des portefeuilles"
 );
+
+export const enregistrerAchat = gestionErreur(
+    async (req, res) => {
+        const { nombre, prix, ticker, idPortefeuille } = req.body;
+
+        // Il faut récupérer la data
+
+        // Récupération ID de l'action
+        const action = await req.Action.findOne({ where: { ticker } });
+        if (action.id) {
+            // await req.Transaction.create({ type: "achat", quantite: nombre, prix, idPortefeuille, idAction: action.id });
+        }
+
+    },
+    "controleurEnregistrerAchat",
+    "Erreur lors de l'enregistrelent d'achat de l'action"
+);

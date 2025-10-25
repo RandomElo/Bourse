@@ -81,6 +81,7 @@
             color: #0085ff;
             text-decoration: underline;
             text-align: center;
+            cursor: pointer;
         }
         #divChamps {
             width: 340px;
@@ -99,6 +100,33 @@
         button {
             display: flex;
             margin: 10px auto;
+        }
+    }
+    #divSelectionPortefeuille {
+        text-align: center;
+        #divContenu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            form {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                select {
+                    margin-top: 5px;
+                    margin-bottom: 10px;
+                }
+            }
+            #pAucunPortefeuille {
+                margin-top: 15px;
+                margin-bottom: 30px;
+            }
+            #pCreationPortefeuille {
+                margin-top: 10px;
+                font-weight: bold;
+                text-decoration: underline;
+                color: #0085ff;
+            }
         }
     }
     #divCreationPortefeuille {

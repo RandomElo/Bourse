@@ -30,7 +30,7 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
     const [chargement, setChargement] = useState<boolean>(false);
     const [listePortefeuille, setListePortefeuille] = useState<Array<{ id: number; nom: string }> | null>();
     const [erreurFormModal, setErreurFormModal] = useState<string | null>(null);
-    const [donneesFormulaire, setDonneeFormulaire] = useState<number | string | null>(null);
+    const [donneesFormulaire, setDonneeFormulaire] = useState<null | { nombre: string | null; prix: string | null }>(null);
     const requete = useRequete();
 
     useEffect(() => {
@@ -113,15 +113,69 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                             <form
                                 onSubmit={(e) => {
                                     e.preventDefault();
+                                    const nbrAction = e.currentTarget.querySelector<HTMLInputElement>("#inputNbrAction")?.value;
+                                    const prixAction = e.currentTarget.querySelector<HTMLInputElement>("#inputPrixAction")?.value;
+                                    setDonneeFormulaire({ nombre: nbrAction, prix: prixAction });
+                                    setTypeDonneeModal("selectionPortefeuille");
                                 }}
                             >
                                 <div id="divChamps">
                                     <ChampDonneesForm label="Nombre d'action :" typeInput="number" id="inputNbrAction" />
-                                    <ChampDonneesForm label="Prix :" typeInput="number" id="inputNbrAction" />
+                                    <ChampDonneesForm label="Prix :" typeInput="number" id="inputPrixAction" />
                                 </div>
-                                <button type="submit" className="bouton">Enregistrer</button>
+                                <button type="submit" className="bouton">
+                                    Enregistrer
+                                </button>
                             </form>
                             <p id="pAjouterVente">Ajouter une vente</p>
+                        </div>
+                    )}
+
+                    {typeDonneeModal == "selectionPortefeuille" && (
+                        <div id="divSelectionPortefeuille">
+                            <h2>Selection du portefeuille</h2>
+                            <div id="divContenu">
+                                {listePortefeuille && listePortefeuille.length > 0 ? (
+                                    <form
+                                        onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            const selectPortefeuille = e.currentTarget.querySelector<HTMLInputElement>("#selectNomPortefeuille")?.value;
+
+                                            const corps = { ticker, idPortefeuille: selectPortefeuille, nombre: donneesFormulaire?.nombre, prix: donneesFormulaire?.prix };
+
+                                            // il faut faire une modal commune comprenant, le nom de l'acito, le prix, le nombre, la date et le portefeuille
+
+                                            await requete({ url: "/portefeuille/enregistrer-achat", methode: "POST", corps });
+                                        }}
+                                    >
+                                        <select id="selectNomPortefeuille" defaultValue="" required>
+                                            <option value="" disabled>
+                                                -- Séléctionner un portefeuille --
+                                            </option>
+                                            {listePortefeuille.map((portefeuille, index) => (
+                                                <option key={index} value={portefeuille.id}>
+                                                    {portefeuille.nom}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button type="submit" className="bouton">
+                                            Enregister l'action
+                                        </button>
+                                    </form>
+                                ) : (
+                                    <p id="pAucunPortefeuille">Vous n'avez aucun portefeuille</p>
+                                )}
+                                <p
+                                    id="pCreationPortefeuille"
+                                    onClick={() => {
+                                        console.log("je suis ici");
+                                        setErreurFormModal(null);
+                                        setTypeDonneeModal("creationPortefeuille");
+                                    }}
+                                >
+                                    Crée un portefeuille
+                                </p>
+                            </div>
                         </div>
                     )}
                     {typeDonneeModal == "creationPortefeuille" && (
@@ -131,10 +185,10 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                                 onSubmit={async (e) => {
                                     e.preventDefault();
                                     const valeur = document.querySelector<HTMLInputElement>("#champNom")!.value;
-                                    const reponse = await requete({ url: "/portefeuille/creation", methode: "PUT", corps: { nom: valeur } });
+                                    const reponse = await requete({ url: "/portefeuille/creation", methode: "POST", corps: { nom: valeur } });
 
                                     setListePortefeuille(reponse);
-                                    setTypeDonneeModal("enregistrementAction");
+                                    setTypeDonneeModal("selectionPortefeuille");
                                 }}
                             >
                                 <ChampDonneesForm

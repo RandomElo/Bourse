@@ -11,7 +11,6 @@ export function useRequete() {
     const { setErreur } = useErreur();
     return async function requete({ url, methode = "GET", corps, enTete = {} }: RequeteParametres): Promise<any> {
         try {
-            console.log(`${import.meta.env.VITE_API_URL_BACKEND + url}`);
             const req = await fetch(`${import.meta.env.VITE_API_URL_BACKEND + url}`, {
                 method: methode,
                 headers: {
