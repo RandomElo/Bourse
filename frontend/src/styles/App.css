@@ -56,6 +56,8 @@ body {
     padding: 12px;
     padding-left: 22px;
     padding-right: 22px;
+    font-size: 1em;
+    border: none;
 }
 .input {
     border: 2px solid #f2f2f2;

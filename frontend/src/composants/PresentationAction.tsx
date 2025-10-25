@@ -9,7 +9,7 @@ import Modal from "./Modal";
 import ChampDonneesForm from "./ChampDonneesForm";
 export default function PresentationAction({ ticker }: { ticker: string }) {
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
-    const [contenuModal, setContenuModal] = useState<ReactNode>(<div></div>);
+    const [typeDonneeModal, setTypeDonneeModal] = useState<string>();
     const tableauDuree = ["1 j", "5 j", "1 m", "6 m", "1 a", "5 a", "MAX"] as const;
     type DureeGraphique = (typeof tableauDuree)[number];
 
@@ -29,6 +29,8 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
     const [donnees, setDonnees] = useState<DonneesGraphique>();
     const [chargement, setChargement] = useState<boolean>(false);
     const [listePortefeuille, setListePortefeuille] = useState<Array<{ id: number; nom: string }> | null>();
+    const [erreurFormModal, setErreurFormModal] = useState<string | null>(null);
+    const [donneesFormulaire, setDonneeFormulaire] = useState<number | string | null>(null);
     const requete = useRequete();
 
     useEffect(() => {
@@ -75,45 +77,11 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                         className="bouton"
                         onClick={() => {
                             // Je doit faire une requete pour connaitre la liste des portefeuilles
-                            setContenuModal(
-                                <div id="divEnregistrementAction">
-                                    <h2>Enregistrer l'action</h2>
-                                    {listePortefeuille && listePortefeuille.length > 0 ? (
-                                        <select id="selectNomPortefeuille">
-                                            {listePortefeuille.map((portefeuille, index) => (
-                                                <option key={index} value="">
-                                                    {portefeuille.nom}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <p id="pAucunPortefeuille">Vous n'avez aucun portefeuille</p>
-                                    )}
-                                    <a
-                                        id="boutonCreationPortefeuille"
-                                        className="bouton"
-                                        onClick={() => {
-                                            console.log("je suis ici");
-                                            setContenuModal(
-                                                <div id="divCreationPortefeuille">
-                                                    <h2>Création de portefeuille</h2>
-                                                    <form>
-                                                        <ChampDonneesForm id="champNom" label="Nom" />
-
-                                                        <button type="submit" id="boutonCreePortefeuille">Crée</button>
-                                                    </form>
-                                                </div>
-                                            );
-                                        }}
-                                    >
-                                        Crée un portefeuille
-                                    </a>
-                                </div>
-                            );
+                            setTypeDonneeModal("achatAction");
                             setAfficherModal(true);
                         }}
                     >
-                        Enregistrer l'action
+                        Ajouter un achat
                     </a>
                 </div>
                 <div style={{ height: "2px", backgroundColor: "#f2f2f2" }}></div>
@@ -139,7 +107,54 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
             </div>
             {afficherModal && (
                 <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)}>
-                    {contenuModal}
+                    {typeDonneeModal == "achatAction" && (
+                        <div id="divAjouterAchat">
+                            <h2>Ajouter un achat</h2>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                }}
+                            >
+                                <div id="divChamps">
+                                    <ChampDonneesForm label="Nombre d'action :" typeInput="number" id="inputNbrAction" />
+                                    <ChampDonneesForm label="Prix :" typeInput="number" id="inputNbrAction" />
+                                </div>
+                                <button type="submit" className="bouton">Enregistrer</button>
+                            </form>
+                            <p id="pAjouterVente">Ajouter une vente</p>
+                        </div>
+                    )}
+                    {typeDonneeModal == "creationPortefeuille" && (
+                        <div id="divCreationPortefeuille">
+                            <h2>Création de portefeuille</h2>
+                            <form
+                                onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    const valeur = document.querySelector<HTMLInputElement>("#champNom")!.value;
+                                    const reponse = await requete({ url: "/portefeuille/creation", methode: "PUT", corps: { nom: valeur } });
+
+                                    setListePortefeuille(reponse);
+                                    setTypeDonneeModal("enregistrementAction");
+                                }}
+                            >
+                                <ChampDonneesForm
+                                    id="champNom"
+                                    label="Nom : "
+                                    onBlur={(e) => {
+                                        if (e.target.value.length > 30) {
+                                            setErreurFormModal("Taille max : 30 caractères.");
+                                        } else {
+                                            setErreurFormModal(null);
+                                        }
+                                    }}
+                                />
+                                {erreurFormModal && <p id="pErreur">{erreurFormModal}</p>}
+                                <button type="submit" id="boutonCreePortefeuille" className="bouton" disabled={!!erreurFormModal}>
+                                    Crée
+                                </button>
+                            </form>
+                        </div>
+                    )}
                 </Modal>
             )}
         </>
