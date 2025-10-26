@@ -48,7 +48,6 @@ export const rechercheAction = gestionErreur(
             const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
             // Récupération de nouvelle valeur
             const resultat = await finance.search(req.params.valeur);
-
             // Trie et enregistrement
             for (const action of resultat.quotes) {
                 if (!action.symbol || action.quoteType != "EQUITY") continue;
@@ -58,6 +57,8 @@ export const rechercheAction = gestionErreur(
                     interval: "1m",
                     return: "object",
                 });
+                console.log(donnees.meta.firstTradeDate);
+
                 let ouverture = "";
                 let fermeture = "";
                 if (donnees.indicators.quote[0] != null) {

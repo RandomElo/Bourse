@@ -34,6 +34,9 @@ export default function (bdd) {
             type: DataTypes.STRING(5),
             allowNull: false,
         },
+        premierTrade: {
+            type: DataTypes.TIME,
+        },
     });
     return Action;
 }

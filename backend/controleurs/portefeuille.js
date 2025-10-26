@@ -29,7 +29,7 @@ export const recupererListe = gestionErreur(
 
 export const enregistrerAchat = gestionErreur(
     async (req, res) => {
-        const { nombre, prix, ticker, idPortefeuille } = req.body;
+        const { nombre, prix, ticker, idPortefeuille, date } = req.body;
 
         // Il faut récupérer la data
 

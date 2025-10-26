@@ -111,17 +111,33 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                         <div id="divAjouterAchat">
                             <h2>Ajouter un achat</h2>
                             <form
-                                onSubmit={(e) => {
+                                onSubmit={async (e) => {
                                     e.preventDefault();
                                     const nbrAction = e.currentTarget.querySelector<HTMLInputElement>("#inputNbrAction")?.value;
                                     const prixAction = e.currentTarget.querySelector<HTMLInputElement>("#inputPrixAction")?.value;
-                                    setDonneeFormulaire({ nombre: nbrAction, prix: prixAction });
-                                    setTypeDonneeModal("selectionPortefeuille");
+                                    const selectPortefeuille = e.currentTarget.querySelector<HTMLInputElement>("#selectNomPortefeuille")?.value;
+                                    const dateAchat = e.currentTarget.querySelector<HTMLInputElement>("#inputDateAchat")?.value;
+
+                                    const corps = { ticker, idPortefeuille: selectPortefeuille, nombre: nbrAction, prix: prixAction, date: dateAchat };
+
+                                    await requete({ url: "/portefeuille/enregistrer-achat", methode: "POST", corps });
                                 }}
                             >
                                 <div id="divChamps">
                                     <ChampDonneesForm label="Nombre d'action :" typeInput="number" id="inputNbrAction" />
                                     <ChampDonneesForm label="Prix :" typeInput="number" id="inputPrixAction" />
+                                    <ChampDonneesForm label="Date d'achat :" typeInput="date" id="inputDateAchat" />
+
+                                    <select id="selectNomPortefeuille" defaultValue="" required>
+                                        <option value="" disabled>
+                                            -- Séléctionner un portefeuille --
+                                        </option>
+                                        {listePortefeuille?.map((portefeuille, index) => (
+                                            <option key={index} value={portefeuille.id}>
+                                                {portefeuille.nom}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <button type="submit" className="bouton">
                                     Enregistrer
