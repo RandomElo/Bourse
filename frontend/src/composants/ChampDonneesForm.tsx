@@ -1,23 +1,22 @@
 import { Eye, EyeOff } from "lucide-react";
 import "../styles/composants/ChampDonneesForm.css";
 import { useState } from "react";
-export default function ChampDonneesForm({ id, label, typeInput = "text", placeholder, onBlur }: { id: string; label: string; placeholder?: string; typeInput?: "text" | "password" | "number" | "date"; onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void }) {
+export default function ChampDonneesForm({ id, label, typeInput = "text", placeholder, onBlur, min, value }: { id: string; label: string; placeholder?: string; typeInput?: "text" | "password" | "number" | "date"; onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void; min?: string; value?: string }) {
     const [afficherMdp, setAfficherMdp] = useState<boolean>(false);
-
     return (
         <div id={"div" + id} className="ChampDonneesForm">
             <label htmlFor={id}>{label}</label>
             {typeInput === "password" && (
                 <div id="divInputMdp">
-                    <input type={afficherMdp ? "texte" : "password"} id={id} className="input" placeholder={placeholder} onBlur={onBlur} required />
+                    <input type={afficherMdp ? "texte" : "password"} id={id} className="input" placeholder={placeholder} onBlur={onBlur} required defaultValue={value} />
                     {afficherMdp ? <EyeOff color="#bfbfbf" onClick={() => setAfficherMdp(false)} /> : <Eye color="#bfbfbf" onClick={() => setAfficherMdp(true)} />}
                 </div>
             )}
-            {typeInput == "number" && <input type="number" id={id} className="input" placeholder={placeholder} onBlur={onBlur} required min={1} step={1} />}
+            {typeInput == "number" && <input type="number" id={id} className="input" placeholder={placeholder} onBlur={onBlur} required min={1} step={1} defaultValue={value} />}
 
-            {typeInput == "date" && <input type="date" id={id} className="input" required max={new Date().toISOString().split("T")[0]} />}
+            {typeInput == "date" && <input type="date" id={id} className="input" required min={min} max={new Date().toISOString().split("T")[0]} defaultValue={value} />}
 
-            {typeInput == "text" && <input type="text" id={id} className="input" placeholder={placeholder} onBlur={onBlur} required />}
+            {typeInput == "text" && <input type="text" id={id} className="input" placeholder={placeholder} onBlur={onBlur} required defaultValue={value} />}
         </div>
     );
 }

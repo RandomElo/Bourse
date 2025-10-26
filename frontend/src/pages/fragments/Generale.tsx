@@ -37,7 +37,7 @@ export default function Generale({ children }: { children?: ReactNode }) {
                             {estAuth ? (
                                 <>
                                     <li>
-                                        <NavLink to="/mes-actions">Mes actions</NavLink>
+                                        <NavLink to="/mes-portefeuilles">Mes portefeuilles</NavLink>
                                     </li>
                                 </>
                             ) : (

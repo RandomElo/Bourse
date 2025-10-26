@@ -102,13 +102,30 @@
                     width: 144px;
                 }
                 input {
-                    /* width: 165px; */
+                    width: 173px;
                 }
             }
             #selectNomPortefeuille {
                 display: flex;
                 margin: 10px auto;
             }
+            #pAucunPortefeuille {
+                text-align: center;
+                font-size: 0.9em;
+
+                a {
+                    color: #0085ff;
+                    font-weight: bold;
+                    text-decoration: underline;
+                    cursor: pointer;
+                }
+            }
+        }
+        #pErreurForm {
+            text-align: center;
+            font-size: 0.9em;
+            color: red;
+            font-weight: bold;
         }
         button {
             display: flex;

@@ -9,6 +9,7 @@ import Compte from "./pages/Compte";
 import { ErreurProvider } from "./contexts/ErreurContext";
 import ErreurRoute from "./pages/ErreurRoute";
 import ErreurElement from "./pages/ErreurElement";
+import MesPortefeuilles from "./pages/MesPortefeuilles";
 
 const router = createBrowserRouter([
     {
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
             {
                 path: "/compte",
                 element: <Compte />,
+            },
+            {
+                path: "/mes-portefeuilles",
+                element: <MesPortefeuilles />,
             },
             {
                 path: "*",

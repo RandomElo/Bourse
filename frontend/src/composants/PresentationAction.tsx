@@ -22,21 +22,22 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
         fermeture?: string;
         dernierPrix?: number;
         rendement?: number;
+        premierTrade?: string;
     }
 
     const [message, setMessage] = useState<string | null>(null);
     const [dureeGraphique, setDureeGraphique] = useState<DureeGraphique>("1 j");
     const [donnees, setDonnees] = useState<DonneesGraphique>();
-    const [chargement, setChargement] = useState<boolean>(false);
+    const [chargement, setChargement] = useState<boolean>(true);
     const [listePortefeuille, setListePortefeuille] = useState<Array<{ id: number; nom: string }> | null>();
     const [erreurFormModal, setErreurFormModal] = useState<string | null>(null);
     const [donneesFormulaire, setDonneeFormulaire] = useState<null | { nombre: string | null; prix: string | null }>(null);
+    const [donneeeFormCreationPortefeuille, setDonneeFormCreationPortefeuille] = useState<{ prix?: string; nombre?: string; date?: string }>({});
     const requete = useRequete();
 
     useEffect(() => {
         // Récupération des données pour le graphique
         const recuperationDonnees = async () => {
-            setMessage(null);
             setChargement(true);
 
             const reponse = await requete({ url: `/bourse/graphique?ticker=${ticker}&duree=${dureeGraphique}` });
@@ -47,7 +48,9 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
 
             if (reponse.message) {
                 setMessage(reponse.message);
+                setDonnees(reponse.donnees);
             } else {
+                console.log(donnees?.premierTrade);
                 setDonnees(reponse);
             }
         };
@@ -77,6 +80,8 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                         className="bouton"
                         onClick={() => {
                             // Je doit faire une requete pour connaitre la liste des portefeuilles
+                            setDonneeFormCreationPortefeuille({});
+                            setErreurFormModal(null);
                             setTypeDonneeModal("achatAction");
                             setAfficherModal(true);
                         }}
@@ -119,26 +124,51 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                                     const dateAchat = e.currentTarget.querySelector<HTMLInputElement>("#inputDateAchat")?.value;
 
                                     const corps = { ticker, idPortefeuille: selectPortefeuille, nombre: nbrAction, prix: prixAction, date: dateAchat };
-
-                                    await requete({ url: "/portefeuille/enregistrer-achat", methode: "POST", corps });
+                                    console.log("je suis ici");
+                                    const reponse = await requete({ url: "/portefeuille/enregistrer-achat", methode: "POST", corps });
+                                    if (reponse.erreur) {
+                                        setErreurFormModal(reponse.erreur);
+                                    } else {
+                                        setAfficherModal(false);
+                                    }
                                 }}
                             >
                                 <div id="divChamps">
-                                    <ChampDonneesForm label="Nombre d'action :" typeInput="number" id="inputNbrAction" />
-                                    <ChampDonneesForm label="Prix :" typeInput="number" id="inputPrixAction" />
-                                    <ChampDonneesForm label="Date d'achat :" typeInput="date" id="inputDateAchat" />
-
-                                    <select id="selectNomPortefeuille" defaultValue="" required>
-                                        <option value="" disabled>
-                                            -- Séléctionner un portefeuille --
-                                        </option>
-                                        {listePortefeuille?.map((portefeuille, index) => (
-                                            <option key={index} value={portefeuille.id}>
-                                                {portefeuille.nom}
+                                    <ChampDonneesForm label="Nombre d'action :" typeInput="number" id="inputNbrAction" value={donneeeFormCreationPortefeuille?.nombre} />
+                                    <ChampDonneesForm label="Prix :" typeInput="number" id="inputPrixAction" value={donneeeFormCreationPortefeuille?.prix} />
+                                    <ChampDonneesForm label="Date d'achat :" typeInput="date" id="inputDateAchat" min={donnees?.premierTrade} value={donneeeFormCreationPortefeuille?.date} />
+                                    {listePortefeuille && listePortefeuille.length > 0 ? (
+                                        <select id="selectNomPortefeuille" defaultValue="" required>
+                                            <option value="" disabled>
+                                                -- Séléctionner un portefeuille --
                                             </option>
-                                        ))}
-                                    </select>
+                                            {listePortefeuille?.map((portefeuille, index) => (
+                                                <option key={index} value={portefeuille.id}>
+                                                    {portefeuille.nom}
+                                                </option>
+                                            ))}
+                                            alstom
+                                        </select>
+                                    ) : (
+                                        <p id="pAucunPortefeuille">
+                                            Vous n'avez pas de portefeuille -{" "}
+                                            <a
+                                                onClick={(e) => {
+                                                    const base = e.currentTarget.parentNode?.parentNode;
+                                                    const nbrAction = base?.querySelector<HTMLInputElement>("#inputNbrAction")?.value;
+                                                    const prixAction = base?.querySelector<HTMLInputElement>("#inputPrixAction")?.value;
+                                                    const dateAchat = base?.querySelector<HTMLInputElement>("#inputDateAchat")?.value;
+                                                    console.log({ nombre: nbrAction, prix: prixAction, date: dateAchat });
+                                                    setDonneeFormCreationPortefeuille({ nombre: nbrAction, prix: prixAction, date: dateAchat });
+                                                    setTypeDonneeModal("creationPortefeuille");
+                                                }}
+                                            >
+                                                En crée un
+                                            </a>
+                                        </p>
+                                    )}
                                 </div>
+                                {erreurFormModal && <p id="pErreurForm">{erreurFormModal}</p>}
                                 <button type="submit" className="bouton">
                                     Enregistrer
                                 </button>
@@ -184,7 +214,6 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                                 <p
                                     id="pCreationPortefeuille"
                                     onClick={() => {
-                                        console.log("je suis ici");
                                         setErreurFormModal(null);
                                         setTypeDonneeModal("creationPortefeuille");
                                     }}
@@ -204,7 +233,7 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                                     const reponse = await requete({ url: "/portefeuille/creation", methode: "POST", corps: { nom: valeur } });
 
                                     setListePortefeuille(reponse);
-                                    setTypeDonneeModal("selectionPortefeuille");
+                                    setTypeDonneeModal("achatAction");
                                 }}
                             >
                                 <ChampDonneesForm

@@ -57,8 +57,11 @@ export const rechercheAction = gestionErreur(
                     interval: "1m",
                     return: "object",
                 });
-                console.log(donnees.meta.firstTradeDate);
 
+                // Récupération de la date du premier trade
+                let premierTrade = donnees.meta.firstTradeDate ? new Date(donnees.meta.firstTradeDate).toISOString().split("T")[0] : null;
+
+                // Récupération des dates d'ouverture et de fermeture
                 let ouverture = "";
                 let fermeture = "";
                 if (donnees.indicators.quote[0] != null) {
@@ -78,6 +81,7 @@ export const rechercheAction = gestionErreur(
                     ouverture,
                     fermeture,
                     devise: donnees.meta.currency,
+                    premierTrade,
                 });
             }
 
@@ -96,7 +100,7 @@ export const graphique = gestionErreur(
         const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
         // Récupération des valeurs dans la bdd
-        const { ouverture, fermeture, devise, nom } = await req.Action.findOne({ where: { ticker: req.query.ticker } });
+        const { ouverture, fermeture, devise, nom, premierTrade } = await req.Action.findOne({ where: { ticker: req.query.ticker } });
 
         // GESTION DU GRAPHIQUE
 
@@ -155,7 +159,7 @@ export const graphique = gestionErreur(
 
         const graph = await finance.chart(req.query.ticker, options);
         if (!graph.indicators.quote[0]) {
-            return res.json({ etat: true, detail: { nom, message: "Impossible de récupérer les données dans la plage demandée." } });
+            return res.json({ etat: true, detail: { donnees: { premierTrade, nom }, message: "Impossible de récupérer les données dans la plage demandée." } });
         }
         const timestamps = graph.timestamp;
         const prixFermeture = graph.indicators.quote[0].close;
@@ -170,9 +174,9 @@ export const graphique = gestionErreur(
         dernierPrix = dernierPrix.toFixed(2);
 
         if (!duree || duree == "1j") {
-            return res.json({ etat: true, detail: { dates, prixFermeture, ouverture, fermeture, devise, nom, dernierPrix, rendement } });
+            return res.json({ etat: true, detail: { dates, prixFermeture, ouverture, fermeture, devise, nom, dernierPrix, rendement, premierTrade } });
         } else {
-            return res.json({ etat: true, detail: { dates, prixFermeture, devise, nom, dernierPrix, rendement } });
+            return res.json({ etat: true, detail: { dates, prixFermeture, devise, nom, dernierPrix, rendement, premierTrade } });
         }
     },
     "controleurInformationsAction",
