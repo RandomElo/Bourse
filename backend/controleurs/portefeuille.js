@@ -1,4 +1,5 @@
 import gestionErreur from "../middlewares/gestionErreur.js";
+import YahooFinance from "yahoo-finance2";
 
 // Fonction qui permet de simplifier la récupération des portefeuilles utilisateur
 const recuperationListePortefeuillesUtilisateur = async (req) => {
@@ -60,14 +61,77 @@ export const enregistrerAchat = gestionErreur(
     "Erreur lors de l'enregistrelent d'achat de l'action"
 );
 
-export const recupererListePortefeuilleEtTransaction = gestionErreur(async (req, res) => {
-    let portefeuilles = await req.Portefeuille.findAll({ where: { idUtilisateur: req.idUtilisateur }, raw: true, attributes: { exclude: ["idUtilisateur"] } });
-    for (const indexPortefeuille in portefeuilles) {
-        console.log("ici");
-        const portefeuille = portefeuilles[indexPortefeuille];
-        const transactions = await req.Transaction.findAll({ where: { idPortefeuille: portefeuille.id }, attributes: { exclude: ["idPortefeuille"] } });
-        portefeuilles[indexPortefeuille].listeTransactions = transactions;
-        console.log(portefeuilles[indexPortefeuille].listeTransactions);
-    }
-    return res.json({ etat: true, detail: portefeuilles });
-});
+export const recupererListePortefeuilleEtTransaction = gestionErreur(
+    async (req, res) => {
+        const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
+        let portefeuilles = await req.Portefeuille.findAll({
+            where: { idUtilisateur: req.idUtilisateur },
+            raw: true,
+            attributes: { exclude: ["idUtilisateur"] },
+        });
+
+        for (const indexPortefeuille in portefeuilles) {
+            const portefeuille = portefeuilles[indexPortefeuille];
+
+            const transactions = await req.Transaction.findAll({ where: { idPortefeuille: portefeuille.id }, attributes: { exclude: ["idPortefeuille"] }, raw: true });
+
+            let devisePortefeuille = null;
+            let calculerValorisation = true;
+
+            // Création d'un tableau qui contient les id de facon unique
+            // map permet de crée un tableau simple avec les id, et set permet de supprimer les doublons
+            const idActions = [...new Set(transactions.map((t) => t.idAction))];
+
+            // Récupérations des informations complémentaires
+            const detailsActions = {};
+            for (const id of idActions) {
+                const action = await req.Action.findByPk(id);
+                const cotation = await finance.quote(action.ticker);
+                const devise = cotation.currency;
+
+                // Gestion de la valorisation total du portefeuille
+                if (!devisePortefeuille) {
+                    devisePortefeuille = devise;
+                }
+                if (cotation.currency !== devisePortefeuille) {
+                    calculerValorisation = false;
+                }
+
+                detailsActions[id] = { nom: action.nom, prixActuel: cotation.regularMarketPrice, devise };
+            }
+
+            // ajout des données enrichies
+            const transactionsEnrichies = transactions.map((t) => ({
+                ...t,
+                nomAction: detailsActions[t.idAction].nom,
+                prixActuel: detailsActions[t.idAction].prixActuel,
+                devise: detailsActions[t.idAction].devise,
+            }));
+
+            portefeuilles[indexPortefeuille].listeTransactions = transactionsEnrichies;
+
+            // GESTION DU CALCUL DE LA VALORISATION
+
+            let valorisationActuel = 0;
+            let valorisationDepart = 0;
+            for (const transaction of transactionsEnrichies) {
+                const info = detailsActions[transaction.idAction];
+                valorisationActuel += transaction.quantite * info.prixActuel;
+                valorisationDepart += transaction.quantite * transaction.prix;
+            }
+
+            portefeuilles[indexPortefeuille].valorisation = valorisationActuel.toFixed(2);
+            portefeuilles[indexPortefeuille].devise = devisePortefeuille;
+            portefeuilles[indexPortefeuille].rendementAujourdhui = (((valorisationActuel - valorisationDepart) / valorisationDepart) * 100).toFixed(2);
+            if (!calculerValorisation) {
+                portefeuilles[indexPortefeuille].valorisation = "Calcul impossible";
+            }
+
+            // il faut que je récupére le nom de chaque transaction
+            // la valorisation actuel de chaque titre
+        }
+        return res.json({ etat: true, detail: portefeuilles });
+    },
+    "controleurRecuperationListePortefeuilleEtTransaction",
+    "Erreur lors de la récupération détaillée des portefeuilles et de leur contenu"
+);

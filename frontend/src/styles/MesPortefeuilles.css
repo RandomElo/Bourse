@@ -1,3 +1,25 @@
 .MesPortefeuilles {
-    
+    #divPresentationPortefeuilles {
+        table {
+            margin: 5px auto 0 auto;
+            width: 700px;
+            border-collapse: collapse;
+            .chevron {
+                cursor: pointer;
+                padding: 5px;
+            }
+            .chevron:hover {
+                border-radius: 5px;
+                background-color: rgb(205, 205, 205);
+            }
+            thead {
+                tr {
+                    height: auto;
+                }
+            }
+            tr {
+                height: 45px;
+            }
+        }
+    }
 }

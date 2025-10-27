@@ -1,7 +1,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import "../styles/composants/ChampDonneesForm.css";
 import { useState } from "react";
-export default function ChampDonneesForm({ id, label, typeInput = "text", placeholder, onBlur, min, value }: { id: string; label: string; placeholder?: string; typeInput?: "text" | "password" | "number" | "date"; onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void; min?: string; value?: string }) {
+export default function ChampDonneesForm({ id, label, typeInput = "text", placeholder, onBlur, min, value, pas = 1 }: { id: string; label: string; placeholder?: string; typeInput?: "text" | "password" | "number" | "date"; onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void; min?: string; value?: string; pas?: number }) {
     const [afficherMdp, setAfficherMdp] = useState<boolean>(false);
     return (
         <div id={"div" + id} className="ChampDonneesForm">
@@ -12,7 +12,7 @@ export default function ChampDonneesForm({ id, label, typeInput = "text", placeh
                     {afficherMdp ? <EyeOff color="#bfbfbf" onClick={() => setAfficherMdp(false)} /> : <Eye color="#bfbfbf" onClick={() => setAfficherMdp(true)} />}
                 </div>
             )}
-            {typeInput == "number" && <input type="number" id={id} className="input" placeholder={placeholder} onBlur={onBlur} required min={1} step={1} defaultValue={value} />}
+            {typeInput == "number" && <input type="number" id={id} className="input" placeholder={placeholder} onBlur={onBlur} required min={1} step={pas} defaultValue={value} />}
 
             {typeInput == "date" && <input type="date" id={id} className="input" required min={min} max={new Date().toISOString().split("T")[0]} defaultValue={value} />}
 

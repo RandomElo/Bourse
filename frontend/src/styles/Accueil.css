@@ -105,9 +105,16 @@
                     width: 173px;
                 }
             }
-            #selectNomPortefeuille {
+            #divSelectionPortefeuille {
                 display: flex;
-                margin: 10px auto;
+                align-items: center;
+                justify-content: space-between;
+                a {
+                    color: #0085ff;
+                    font-weight: bold;
+                    text-decoration: underline;
+                    cursor: pointer;
+                }
             }
             #pAucunPortefeuille {
                 text-align: center;

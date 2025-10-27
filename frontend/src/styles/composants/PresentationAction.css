@@ -25,21 +25,8 @@
         #pRendementAction {
             display: flex;
             align-items: center;
-            height: 25px;
 
             margin-left: 10px;
-            padding: 5px 7px;
-
-            font-size: 1.2em;
-            border-radius: 8px;
-        }
-        #pRendementAction.positif {
-            color: #137333;
-            background-color: #e6f4ea;
-        }
-        #pRendementAction.negatif {
-            color: #a50e0e;
-            background-color: #fce8e6;
         }
     }
 
@@ -68,5 +55,4 @@
             border-radius: 2px;
         }
     }
-
 }

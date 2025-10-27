@@ -20,7 +20,7 @@ export default function (bdd) {
             allowNull: false,
         },
         date: {
-            type: DataTypes.DATE,
+            type: DataTypes.STRING(10),
             allowNull: false,
         },
     });
