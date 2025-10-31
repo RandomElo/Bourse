@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { useRequete } from "../fonctions/requete";
 
 import "../styles/composants/PresentationAction.css";
-import GraphiqueBourse from "./GraphiqueBourse";
 import Chargement from "./Chargement";
 import Modal from "./Modal";
 import ChampDonneesForm from "./ChampDonneesForm";
 import RendementAction from "./RendementAction";
+import Graphique from "./Graphique";
 export default function PresentationAction({ ticker }: { ticker: string }) {
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
     const [typeDonneeModal, setTypeDonneeModal] = useState<string>();
@@ -18,8 +18,6 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
         prixFermeture: Array<number>;
         nom: string;
         devise: string;
-        ouverture?: string;
-        fermeture?: string;
         dernierPrix?: number;
         rendement?: number;
         premierTrade?: string;
@@ -31,7 +29,6 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
     const [chargement, setChargement] = useState<boolean>(true);
     const [listePortefeuille, setListePortefeuille] = useState<Array<{ id: number; nom: string }> | null>();
     const [erreurFormModal, setErreurFormModal] = useState<string | null>(null);
-    const [donneesFormulaire, setDonneeFormulaire] = useState<null | { nombre: string | null; prix: string | null }>(null);
     const [donneeeFormCreationPortefeuille, setDonneeFormCreationPortefeuille] = useState<{ prix?: string; nombre?: string; date?: string }>({});
     const requete = useRequete();
 
@@ -50,7 +47,6 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                 setMessage(reponse.message);
                 setDonnees(reponse.donnees);
             } else {
-                console.log(donnees?.premierTrade);
                 setDonnees(reponse);
             }
         };
@@ -105,7 +101,7 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                         <p id="pPrixAction">
                             {donnees.dernierPrix} {donnees.devise}
                         </p>
-                        <RendementAction valeur={donnees.rendement} id="pRendementAction" />
+                        <RendementAction valeur={donnees.rendement} mode={"defini"} id="pRendementAction" />
                     </div>
                 )}
                 <div id="divChoixEtenduGraphique">
@@ -115,7 +111,8 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                         </a>
                     ))}
                 </div>
-                {message ? <p id="pMessage">{message}</p> : <div id="divGraphique">{donnees ? <GraphiqueBourse key={dureeGraphique} donnees={donnees} duree={dureeGraphique} width={1000} /> : ""}</div>}
+
+                {message ? <p id="pMessage">{message}</p> : <div id="divGraphique">{donnees ? <Graphique donnees={donnees} duree={dureeGraphique} rendement={Number(donnees.rendement)} /> : ""}</div>}
             </div>
             {afficherModal && (
                 <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)}>

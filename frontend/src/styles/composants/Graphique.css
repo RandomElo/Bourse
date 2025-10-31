@@ -1,0 +1,52 @@
+.Graphique {
+    width: 800px;
+    height: 400px;
+    min-width: 0;
+    min-height: 0;
+    display: block;
+    .tooltipBasique {
+        /* 1 j : 95 */
+        /* 5j : 110 */
+        /* 1m : petit */
+        /* width: 110px; */
+        padding: 8px;
+        background-color: rgb(44, 47, 51);
+        color: white;
+        font-size: 14px;
+        border-radius: 8px;
+
+        #prix {
+            font-weight: bold;
+        }
+    }
+    .duree1j,
+    .duree1m {
+        width: 50px;
+    }
+    .duree5j {
+        width: 105px;
+    }
+    .duree6m,
+    .duree1a,
+    .duree5a,
+    .dureeMAX {
+        width: 90px;
+    }
+    
+    .tooltipDifference {
+        width: 183px;
+        padding: 8px;
+        background-color: rgb(44, 47, 51);
+        color: white;
+        font-size: 14px;
+        border-radius: 8px;
+        .positif {
+            font-weight: bold;
+            color: palegreen;
+        }
+        .negatif {
+            font-weight: bold;
+            color: red;
+        }
+    }
+}

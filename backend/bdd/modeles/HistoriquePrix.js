@@ -7,15 +7,13 @@ export default function (bdd) {
             autoIncrement: true,
             primaryKey: true,
         },
-        prix: {
-            type: DataTypes.FLOAT,
+        date: {
+            type: DataTypes.DATEONLY,
             allowNull: false,
         },
-        devise: {
-            type: DataTypes.STRING(5),
-        },
-        datePremiereCotation: {
-            type: DataTypes.TIME,
+        prix: {
+            type: DataTypes.FLOAT(10, 2),
+            allowNull: false,
         },
     });
     return HistoriquePrix;

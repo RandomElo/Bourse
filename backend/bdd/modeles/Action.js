@@ -24,12 +24,6 @@ export default function (bdd) {
         industrie: {
             type: DataTypes.STRING(30),
         },
-        ouverture: {
-            type: DataTypes.TIME,
-        },
-        fermeture: {
-            type: DataTypes.TIME,
-        },
         devise: {
             type: DataTypes.STRING(5),
             allowNull: false,

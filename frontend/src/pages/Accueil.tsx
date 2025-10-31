@@ -10,15 +10,16 @@ import PresentationAction from "../composants/PresentationAction";
 export default function Accueil() {
     const requete = useRequete();
     const { estAuth } = useAuth();
+    const debounceTimeout = useRef<number | null>(null);
+    const refInputRecherche = useRef<HTMLInputElement | null>(null);
+
     const [indexSelectionner, setIndexSelectionner] = useState(-1);
     const [listeActions, setListeActions] = useState<[{ nom: string; ticker: string; place: string; rendementJourPourcentage: number; prix: string }] | []>([]);
     const [action, setAction] = useState<string | null>(null);
 
-    const debounceTimeout = useRef<number | null>(null);
-    const refInputRecherche = useRef<HTMLInputElement | null>(null);
-
     useEffect(() => {
         document.title = "Accueil - Bourse";
+        requete({ url: "/portefeuille/verification-suivi-valeurs" });
     }, []);
 
     // Permet de détecter l'appui sur des touches

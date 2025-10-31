@@ -1,0 +1,43 @@
+.CartePerformances {
+    width: 286px;
+    margin: auto;
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 8px;
+
+    .titre {
+        margin-bottom: 5px;
+        font-weight: bold
+        ;
+        text-align: left;
+        font-size: 18px;
+    }
+    .divCartesPerformances {
+        display: flex;
+        /* justify-content: center; */
+        .divGainDuJour {
+            margin-right: 12px;
+        }
+        .titreCarte {
+            margin-bottom: 4px;
+            text-align: left;
+        }
+        .divCarte {
+            width: 120px;
+            padding: 8px;
+            border-radius: 8px;
+            line-height: 24px;
+            p {
+                text-align: left;
+            }
+        }
+        .divCarte.positif {
+            color: #137333;
+            background-color: #e6f4ea;
+        }
+        .divCarte.negatif {
+            color: #a50e0e;
+            background-color: #fce8e6;
+        }
+    }
+}

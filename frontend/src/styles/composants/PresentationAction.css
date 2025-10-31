@@ -31,7 +31,8 @@
     }
 
     #divChoixEtenduGraphique {
-        margin: 5px auto;
+        margin-top: 5px;
+        margin-bottom: 15px;
         .aDuree {
             position: relative;
             margin-right: 18px;

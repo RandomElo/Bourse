@@ -36,7 +36,7 @@ body {
 }
 
 /* Classes génériques */
-#titre {
+h1#titre {
     text-align: center;
 }
 

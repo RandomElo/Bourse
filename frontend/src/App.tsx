@@ -10,6 +10,7 @@ import { ErreurProvider } from "./contexts/ErreurContext";
 import ErreurRoute from "./pages/ErreurRoute";
 import ErreurElement from "./pages/ErreurElement";
 import MesPortefeuilles from "./pages/MesPortefeuilles";
+import Portefeuille from "./pages/Portefeuille";
 
 const router = createBrowserRouter([
     {
@@ -37,6 +38,11 @@ const router = createBrowserRouter([
                 path: "/mes-portefeuilles",
                 element: <MesPortefeuilles />,
             },
+            {
+                path: "/portefeuille/:id",
+                element: <Portefeuille />,
+            },
+
             {
                 path: "*",
                 element: <ErreurRoute />,

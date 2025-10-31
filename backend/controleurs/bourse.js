@@ -41,8 +41,8 @@ async function recupererHeureDebutHeureFin(donnees) {
 export const rechercheAction = gestionErreur(
     async (req, res) => {
         // Vérification de la bdd
-        const resultatsBdd = await req.Action.findAll({ where: { nom: { [Op.like]: `%${req.params.valeur}%` } }, order: [["nom", "ASC"]], limit: 3 });
-        if (resultatsBdd.length == 3) {
+        const resultatsBdd = await req.Action.findAll({ where: { nom: { [Op.like]: `%${req.params.valeur}%` } }, order: [["nom", "ASC"]], limit: 5 });
+        if (resultatsBdd.length == 5) {
             return res.json({ etat: true, detail: await gestionValeursRecherche(resultatsBdd.map((action) => ({ nom: action.nom, ticker: action.ticker, place: action?.placeCotation }))) });
         } else {
             const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
@@ -53,22 +53,13 @@ export const rechercheAction = gestionErreur(
                 if (!action.symbol || action.quoteType != "EQUITY") continue;
                 // Récupération pour une valeur témoin
                 const donnees = await finance.chart(action.symbol, {
-                    period1: "2025-10-21",
+                    period1: "2025-10-24",
                     interval: "1m",
                     return: "object",
                 });
 
                 // Récupération de la date du premier trade
                 let premierTrade = donnees.meta.firstTradeDate ? new Date(donnees.meta.firstTradeDate).toISOString().split("T")[0] : null;
-
-                // Récupération des dates d'ouverture et de fermeture
-                let ouverture = "";
-                let fermeture = "";
-                if (donnees.indicators.quote[0] != null) {
-                    const reponse = await recupererHeureDebutHeureFin(donnees);
-                    ouverture = reponse.ouverture;
-                    fermeture = reponse.fermeture;
-                }
 
                 // Construction d'un tableau avec date et valeur
 
@@ -78,14 +69,12 @@ export const rechercheAction = gestionErreur(
                     placeCotation: action.exchDisp,
                     secteur: action?.sectorDisp,
                     industrie: action?.industryDisp,
-                    ouverture,
-                    fermeture,
                     devise: donnees.meta.currency,
                     premierTrade,
                 });
             }
 
-            const resultatsBdd = await req.Action.findAll({ where: { nom: { [Op.like]: `%${req.params.valeur}%` } }, order: [["nom", "ASC"]], limit: 3 });
+            const resultatsBdd = await req.Action.findAll({ where: { nom: { [Op.like]: `%${req.params.valeur}%` } }, order: [["nom", "ASC"]], limit: 5 });
 
             return res.json({ etat: true, detail: await gestionValeursRecherche(resultatsBdd.map((action) => ({ nom: action.nom, ticker: action.ticker, place: action?.placeCotation }))) });
         }
@@ -161,24 +150,44 @@ export const graphique = gestionErreur(
         if (!graph.indicators.quote[0]) {
             return res.json({ etat: true, detail: { donnees: { premierTrade, nom }, message: "Impossible de récupérer les données dans la plage demandée." } });
         }
+
         const timestamps = graph.timestamp;
         const prixFermeture = graph.indicators.quote[0].close;
 
         const dates = timestamps.map((ts) => new Date(ts * 1000));
 
         // Calcul du rendement
-        const premierPrix = Number(graph.meta.previousClose);
+        const premierPrix = graph.meta.previousClose ? Number(graph.meta.previousClose) : Number(prixFermeture[0]);
         let dernierPrix = Number(prixFermeture[prixFermeture.length - 1]);
-
         const rendement = (((dernierPrix - premierPrix) / premierPrix) * 100).toFixed(2);
         dernierPrix = dernierPrix.toFixed(2);
 
         if (!duree || duree == "1j") {
-            return res.json({ etat: true, detail: { dates, prixFermeture, ouverture, fermeture, devise, nom, dernierPrix, rendement, premierTrade } });
+            return res.json({ etat: true, detail: { dates, prixFermeture, devise, nom, dernierPrix, rendement, premierTrade } });
         } else {
             return res.json({ etat: true, detail: { dates, prixFermeture, devise, nom, dernierPrix, rendement, premierTrade } });
         }
     },
     "controleurInformationsAction",
     "Erreur lors de la récupération d'information sur l'action"
+);
+export const test = gestionErreur(
+    async (req, res) => {
+        const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
+        const requete = await finance.chart("AAPL", { period1: "2024-01-01", interval: "1d" });
+
+        const reponse = requete.quotes.map((q) => ({
+            date: new Date(q.date).toISOString().split("T")[0],
+            open: q.open,
+            high: q.high,
+            low: q.low,
+            close: q.close,
+            volume: q.volume,
+            adjclose: q.adjclose,
+        }));
+
+        return res.json({ etat: true, detail: reponse });
+    },
+    "controleurTest",
+    "Erreur lors du test"
 );

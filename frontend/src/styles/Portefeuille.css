@@ -1,0 +1,60 @@
+.Portefeuille {
+    .CartePerformances {
+        margin: 15px auto;
+    }
+    table {
+        width: 900px;
+        margin: 10px auto 0 auto;
+        border-collapse: collapse;
+        border: 1px solid transparent;
+        thead tr {
+            height: auto;
+        }
+
+        tr {
+            height: 45px;
+        }
+
+        tr.survolee {
+            background-color: rgb(241, 241, 241);
+        }
+
+        #tr1 {
+            border-bottom: 1px solid transparent;
+        }
+        /* Définition des colonnes */
+        .colonneNom {
+            width: 280px;
+            text-align: center;
+        }
+        .colonnePrix {
+            width: 112px;
+            text-align: center;
+        }
+        .colonneCentrer {
+            text-align: center;
+        }
+        .colonneGainDuJour {
+            width: 237px;
+        }
+        .colonneChevron {
+            cursor: pointer;
+        }
+
+        /* Gestion du style si le détail d'une action est selectionner */
+        tbody tr.actionSelectionnee {
+            background-color: rgb(241, 241, 241);
+            border: 1px solid black;
+            border-top: 1px solid black;
+            border-bottom: none;
+        }
+        .trListeTransactions {
+            border-right: 1px solid black;
+            border-left: 1px solid black;
+        }
+        .derniereLigneTransaction {
+            border-top: none;
+            border-bottom: 1px solid black;
+        }
+    }
+}
