@@ -109,3 +109,30 @@ h1#titre {
     margin: 0 20px;
     list-style: none;
 }
+/* Element particulier  */
+#divChoixEtenduGraphique {
+    margin-top: 5px;
+    margin-bottom: 15px;
+    .aDuree {
+        position: relative;
+        margin-right: 18px;
+        padding: 5px;
+        font-size: 1em;
+        cursor: pointer;
+    }
+
+    .aDuree:hover {
+        background-color: #f7f8f8;
+    }
+
+    .aDuree.selectionnee::after {
+        content: "";
+        position: absolute;
+        left: 5px;
+        bottom: -2px; /* distance sous le texte */
+        width: calc(100% - 10px);
+        height: 2px;
+        background: currentColor; /* même couleur que le texte */
+        border-radius: 2px;
+    }
+}

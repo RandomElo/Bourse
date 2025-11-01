@@ -19,7 +19,6 @@ export default function Accueil() {
 
     useEffect(() => {
         document.title = "Accueil - Bourse";
-        requete({ url: "/portefeuille/verification-suivi-valeurs" });
     }, []);
 
     // Permet de détecter l'appui sur des touches

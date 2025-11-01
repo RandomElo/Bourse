@@ -38,7 +38,7 @@ export default function MesPortefeuilles() {
     // Récupérationd des portefeuilles
     useEffect(() => {
         const recuperationDonnees = async () => {
-            const reponse = await requete({ url: "/portefeuille/recuperation-portefeuilles-detailles" });
+            const reponse = await requete({ url: "/portefeuille/recuperation-portefeuilles-details" });
             console.log(reponse);
             setDonnees(reponse);
         };

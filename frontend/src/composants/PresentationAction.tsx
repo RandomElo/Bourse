@@ -7,12 +7,11 @@ import Modal from "./Modal";
 import ChampDonneesForm from "./ChampDonneesForm";
 import RendementAction from "./RendementAction";
 import Graphique from "./Graphique";
+import DureeGraphique from "./DureeGraphique";
 export default function PresentationAction({ ticker }: { ticker: string }) {
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
     const [typeDonneeModal, setTypeDonneeModal] = useState<string>();
-    const tableauDuree = ["1 j", "5 j", "1 m", "6 m", "1 a", "5 a", "MAX"] as const;
-    type DureeGraphique = (typeof tableauDuree)[number];
-
+    type DureeGraphique = "1 j" | "5 j" | "1 m" | "6 m" | "1 a" | "5 a" | "MAX";
     interface DonneesGraphique {
         dates: Array<Date>;
         prixFermeture: Array<number>;
@@ -104,13 +103,7 @@ export default function PresentationAction({ ticker }: { ticker: string }) {
                         <RendementAction valeur={donnees.rendement} mode={"defini"} id="pRendementAction" />
                     </div>
                 )}
-                <div id="divChoixEtenduGraphique">
-                    {tableauDuree.map((duree, index) => (
-                        <a key={index} className={`aDuree ${dureeGraphique == duree ? "selectionnee" : ""}`} onClick={() => setDureeGraphique(duree)}>
-                            {duree}
-                        </a>
-                    ))}
-                </div>
+                <DureeGraphique set={setDureeGraphique} dureeGraphique={dureeGraphique} />
 
                 {message ? <p id="pMessage">{message}</p> : <div id="divGraphique">{donnees ? <Graphique donnees={donnees} duree={dureeGraphique} rendement={Number(donnees.rendement)} /> : ""}</div>}
             </div>

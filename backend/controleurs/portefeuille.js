@@ -171,65 +171,149 @@ export const recuperationDetailsUnPortefeuille = gestionErreur(
     "controleurRecuperationDetailsUnPortefeuille",
     "Erreur lors de la récupération des détails du portefeuille"
 );
-export const verificationSuiviValeurPortefeuilles = gestionErreur(
+
+export const recuperationGraphiqueValorisation = gestionErreur(
     async (req, res) => {
-        res.json({ etat: true, detail: "Recu" });
-        setImmediate(async () => {
-            const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-            const transactions = await req.Transaction.findAll({ raw: true });
+        const { id, duree } = req.query;
 
-            const date = new Date();
-            date.setDate(date.getDate() - 20);
-            console.log(date);
+        const portefeuille = await req.Portefeuille.findByPk(id);
+        if (!portefeuille || portefeuille.idUtilisateur !== req.idUtilisateur) {
+            return res.json({ etat: false, detail: "Accès interdit" });
+        }
 
-            const tableauIdAction = [];
-            for (const transaction of transactions) {
-                // Si jamais je ne m'en suis pas encore occuper
-                if (!tableauIdAction.includes(transaction.idAction)) {
-                    tableauIdAction.push(transaction.idAction);
+        const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
-                    const action = await req.Action.findByPk(transaction.idAction);
-
-                    const requete = await finance.chart(action.ticker, {
-                        period1: date,
-                        interval: "1d",
-                        return: "object",
-                    });
-                    // Mise en forme des données reçu
-                    const timestamps = requete.timestamp;
-                    const fermetures = requete.indicators.quote[0].close;
-
-                    const donneesFormatee = timestamps.map((ts, i) => ({
-                        date: new Date(ts * 1000),
-                        value: fermetures[i],
-                    }));
-
-                    // console.log(donneesFormatee);
-
-                    // Récupérer de l'historique de prix pour l'action
-                    const historiquePrix = await req.HistoriquePrix.findAll({ where: { idAction: transaction.idAction }, raw: true });
-
-                    for (const donneesPrix of donneesFormatee) {
-                        // prendre en charge l'enregistrement sans filter et apres désactiver et mettre uen verification
-                        const date = new Date(donneesPrix.date).toISOString().split("T")[0];
-                        const dateHistoriquePrix = historiquePrix.filter((enregistrement) => enregistrement.date == date);
-                        console.log(dateHistoriquePrix);
-                    }
-                    // Je verifie qu'il y a bien une date pour chaque timestamp de requete
-
-                    const heureActuelle = new Date().getHours();
-                    if (heureActuelle >= 20) {
-                        // si jamais il y a pas de date du jours alors corriger
-                    }
-                    console.log(heureActuelle);
-
-                    const dernierDate = new Date(requete.timestamp[requete.timestamp.length - 1] * 1000).toLocaleDateString("fr-FR");
-                    const dernierHeure = new Date(requete.timestamp[requete.timestamp.length - 1] * 1000).toLocaleTimeString("fr-FR");
-                    console.log(action.ticker + " - " + dernierDate + " | " + dernierHeure);
-                }
-            }
+        // Récupération des transactions
+        const transactions = await req.Transaction.findAll({
+            where: { idPortefeuille: id },
+            order: [["date", "ASC"]],
+            raw: true,
         });
+
+        if (transactions.length === 0) {
+            return res.json({ etat: true, detail: [] });
+        }
+
+        // Regroupement par action
+        const actionsMap = {};
+        for (const transaction of transactions) {
+            if (!actionsMap[transaction.idAction]) actionsMap[transaction.idAction] = [];
+            actionsMap[transaction.idAction].push(transaction);
+        }
+
+        //Récupération des cours des actions
+        const historiqueActions = {};
+        const quantitesCumul = {}; // idAction → { date → quantité }
+
+        for (const idAction of Object.keys(actionsMap)) {
+            const action = await req.Action.findByPk(idAction, { raw: true });
+            if (!action) continue;
+
+            const { ticker, ouverture } = action;
+
+            const miseEnFormeDate = (date) => date.toISOString().split("T")[0];
+
+            const aujourdhui = new Date();
+
+            let period1;
+            let period2;
+            let interval;
+
+            if (!duree || duree == "1 j") {
+                const heureActuelle = aujourdhui.toLocaleTimeString("fr-FR");
+                if (heureActuelle < ouverture) {
+                    period1 = miseEnFormeDate(hier);
+                } else {
+                    period1 = miseEnFormeDate(aujourdhui);
+                }
+                interval = "1m";
+            } else if (duree == "5 j") {
+                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 5 * 24 * 60 * 60 * 1000));
+                interval = "5m";
+            } else if (duree == "1 m") {
+                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 30 * 24 * 60 * 60 * 1000));
+                interval = "30m";
+            } else if (duree == "6 m") {
+                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 183 * 24 * 60 * 60 * 1000));
+                interval = "1d";
+            } else if (duree == "1 a") {
+                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 365 * 24 * 60 * 60 * 1000));
+                interval = "1d";
+            } else if (duree == "5 a") {
+                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 5 * 365 * 24 * 60 * 60 * 1000));
+                interval = "1d";
+            } else if (duree == "MAX") {
+                period1 = "1970-01-01";
+                interval = "1d";
+            }
+
+            // Si c'est nécessaire j'ajoute un date de fin
+            if (["1 m", "6 m", "1 a", "5 a", "MAX"].includes(duree)) {
+                period2 = miseEnFormeDate(aujourdhui);
+            }
+
+            let options = {
+                period1,
+                interval,
+                return: "object",
+            };
+            if (period2) options.period2 = period2;
+
+            // Récupération du cours depuis 1970
+            const donneesGraphiques = await finance.chart(ticker, options);
+            const timestamps = donneesGraphiques.timestamp;
+            const fermetures = donneesGraphiques.indicators.quote[0].close;
+
+            const historique = {};
+            timestamps.forEach((ts, i) => {
+                const d = new Date(ts * 1000).toISOString().slice(0, 10);
+                historique[d] = fermetures[i];
+            });
+            historiqueActions[idAction] = historique;
+
+            // Construction de la quantité détenue jour par jour
+            const listeDatesCours = Object.keys(historique).sort();
+            let quantite = 0;
+            const quantParJour = {};
+
+            for (const date of listeDatesCours) {
+                // Ajustement quantité si transaction ce jour
+                const transactionsDuJour = actionsMap[idAction].filter((t) => t.date === date);
+
+                for (const transaction of transactionsDuJour) {
+                    quantite += transaction.type === "achat" ? transaction.quantite : -transaction.quantite;
+                }
+                quantParJour[date] = quantite;
+            }
+            quantitesCumul[idAction] = quantParJour;
+        }
+
+        // Construction de la valorisation totale du portefeuille jour par jour
+        const datesReference = Object.values(historiqueActions)[0] ? Object.keys(Object.values(historiqueActions)[0]).sort() : [];
+
+        const valorisationTotale = [];
+
+        for (const date of datesReference) {
+            let somme = 0;
+
+            for (const idAction of Object.keys(historiqueActions)) {
+                const prix = historiqueActions[idAction][date];
+                const quant = quantitesCumul[idAction][date] || 0;
+
+                if (prix && quant > 0) somme += prix * quant;
+            }
+            const sommeFinale = Number(somme.toFixed(2));
+
+            if (sommeFinale !== 0) {
+                valorisationTotale.push({
+                    date: date,
+                    valeur: sommeFinale,
+                });
+            }
+        }
+
+        return res.json({ etat: true, detail: valorisationTotale });
     },
-    "controleurVerificationSuiviValeurPortefeuilles",
-    "Erreur lors de la verification des valeurs en portefeuilles"
+    "controleurRecuperationGraphiqueValorisation",
+    "Erreur lors de les récupérations des informations sur la valorisation des actifs dans le portefeuilles"
 );

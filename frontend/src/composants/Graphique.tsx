@@ -43,26 +43,35 @@ const formatDate = (date: Date, format: "moisAnnee" | "dateMois" | "dateMoisAnne
     }
 };
 
-export default function Graphique({ donnees, duree, rendement }: { donnees: DonneesGraphique; duree: DureeGraphique; rendement: number }) {
+export default function Graphique({ donnees, donneesValorisation, duree, rendement }: { donnees?: DonneesGraphique; donneesValorisation?: Array<{ date: string; valeur: number }>; duree: DureeGraphique; rendement: number }) {
     const [data, setData] = useState<Quote[]>([]);
     const [indiceFixe, setIndiceFixe] = useState<string | null>(null);
     const [indiceSurvol, setIndiceSurvol] = useState<string | null>(null);
 
     useEffect(() => {
         (async () => {
-            let dernierPrixValide: number;
-            const donneesFiltree = donnees.dates.map((dateStr: Date, index: number) => {
-                const prix = donnees.prixFermeture[index];
-                if (prix != null) {
-                    dernierPrixValide = prix; // on garde la dernière valeur valide
-                }
-                return {
-                    date: new Date(dateStr).toISOString(),
-                    close: dernierPrixValide, // si prix était null, on met la dernière valeur connue
-                };
-            });
-
-            setData(donneesFiltree);
+            if (donnees) {
+                let dernierPrixValide: number;
+                const donneesFiltree = donnees.dates.map((dateStr: Date, index: number) => {
+                    const prix = donnees.prixFermeture[index];
+                    if (prix != null) {
+                        dernierPrixValide = prix;
+                    }
+                    return {
+                        date: new Date(dateStr).toISOString(),
+                        close: dernierPrixValide,
+                    };
+                });
+                setData(donneesFiltree);
+            } else if (donneesValorisation) {
+                const donneesFiltree = donneesValorisation.map((element) => {
+                    return {
+                        date: new Date(element.date).toISOString(),
+                        close: element.valeur,
+                    };
+                });
+                setData(donneesFiltree);
+            }
         })();
     }, []);
 

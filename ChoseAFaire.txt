@@ -1,0 +1,1 @@
+Faire un truc qui formate les données de graph de facon plus globale

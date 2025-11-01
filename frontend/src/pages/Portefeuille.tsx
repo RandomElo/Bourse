@@ -1,11 +1,13 @@
 import "../styles/Portefeuille.css";
 import { useRequete } from "../fonctions/requete";
-import {  ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ClipboardSignature } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import {  useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import RendementAction from "../composants/RendementAction";
 import CartePerformances from "../composants/CartePerformances";
+import Graphique from "../composants/Graphique";
+import DureeGraphique from "../composants/DureeGraphique";
 
 // Type pour les transactions - reçu dans donner et trier apres pour remoduler les actions
 interface Transactions {
@@ -63,6 +65,9 @@ export default function Portefeuille() {
 
     const [donnees, setDonnees] = useState<Donnees | null>(null);
     const [actions, setActions] = useState<Array<Action> | null>(null);
+    const [donneesValorisation, setDonnesValorisation] = useState<Array<{ date: string; valeur: number }> | null>(null);
+    const [rendemment, setRendement] = useState<number>(0);
+    const [dureeGraphique, setDureeGraphique] = useState<"1 j" | "5 j" | "1 m" | "6 m" | "1 a" | "5 a" | "MAX">("MAX");
 
     const [idLigneSurvolee, setIdLigneSurvolee] = useState<number | null>(null);
     const [idLigneAfficherDetail, setIdLigneAfficherDetails] = useState<number | null>(null);
@@ -75,7 +80,7 @@ export default function Portefeuille() {
     }, [estAuth, navigation]);
 
     useEffect(() => {
-        const verificationAcces = async () => {
+        const verificationAccesMiseEnFormeDonnees = async () => {
             const reponse = await requete({ url: `/portefeuille/verification-acces/${id}` });
             if (reponse) {
                 setDonnees(location.state?.donnees);
@@ -121,25 +126,34 @@ export default function Portefeuille() {
                 Object.values(resultats).forEach((action) => {
                     const prixActuelGlobal = action.prix; // même prix pour toutes les transactions
 
-                    // const totalInvesti = action.transactions.reduce((acc, t) => acc + t.quantite * action.prix, 0);
-                    // const totalHier = action.transactions.reduce((acc, t) => acc + t.quantite * action.prix, 0); // si tu ajoutes prixHier, remplace
-
                     action.valorisationTotale = action.quantiteTotale * prixActuelGlobal;
 
                     const valorisationHier = action.prixHier * action.quantiteTotale;
                     action.gainJourValeur = Number((action.valorisationTotale - valorisationHier).toFixed(2));
                     action.gainJourPourcent = valorisationHier > 0 ? Number(((action.gainJourValeur / valorisationHier) * 100).toFixed(2)) : 0;
-
-                    // action.prixMoyenAchat = totalInvesti / (action.quantiteTotale || 1);
                 });
-                console.log(donnees);
                 setActions(Object.values(resultats));
             } else {
                 navigation("/");
             }
         };
-        verificationAcces();
+
+        verificationAccesMiseEnFormeDonnees();
     }, []);
+
+    useEffect(() => {
+        const recuperationGraphiqueValorisation = async () => {
+            const reponse = await requete({ url: `/portefeuille/recuperation-graphique-valorisation?id=${id}&duree=${dureeGraphique}` });
+            console.log(reponse);
+            // if (reponse.length === 0) alert("Erreur");
+
+            const premierPrix = reponse[0].valeur;
+            const dernierPrix = reponse[reponse.length - 1].valeur;
+            setRendement(Number((((dernierPrix - premierPrix) / premierPrix) * 100).toFixed(2)));
+            setDonnesValorisation(reponse);
+        };
+        recuperationGraphiqueValorisation();
+    }, [dureeGraphique]);
 
     if (chargement || !actions || !donnees) return null;
 
@@ -224,6 +238,12 @@ export default function Portefeuille() {
                     ))}
                 </tbody>
             </table>
+            {donneesValorisation && (
+                <>
+                    <DureeGraphique set={setDureeGraphique} dureeGraphique={dureeGraphique} />
+                    <Graphique donneesValorisation={donneesValorisation} duree={dureeGraphique} rendement={rendemment} />
+                </>
+            )}
         </main>
     );
 }

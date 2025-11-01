@@ -61,6 +61,16 @@ export const rechercheAction = gestionErreur(
                 // Récupération de la date du premier trade
                 let premierTrade = donnees.meta.firstTradeDate ? new Date(donnees.meta.firstTradeDate).toISOString().split("T")[0] : null;
 
+                // Récupération des dates d'ouverture et de fermeture
+                let ouverture = "";
+                let fermeture = "";
+
+                if (donnees.indicators.quote[0] != null) {
+                    const reponse = await recupererHeureDebutHeureFin(donnees);
+                    ouverture = reponse.ouverture;
+                    fermeture = reponse.fermeture;
+                }
+
                 // Construction d'un tableau avec date et valeur
 
                 await req.Action.upsert({
@@ -69,6 +79,8 @@ export const rechercheAction = gestionErreur(
                     placeCotation: action.exchDisp,
                     secteur: action?.sectorDisp,
                     industrie: action?.industryDisp,
+                    ouverture,
+                    fermeture,
                     devise: donnees.meta.currency,
                     premierTrade,
                 });
@@ -170,24 +182,4 @@ export const graphique = gestionErreur(
     },
     "controleurInformationsAction",
     "Erreur lors de la récupération d'information sur l'action"
-);
-export const test = gestionErreur(
-    async (req, res) => {
-        const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-        const requete = await finance.chart("AAPL", { period1: "2024-01-01", interval: "1d" });
-
-        const reponse = requete.quotes.map((q) => ({
-            date: new Date(q.date).toISOString().split("T")[0],
-            open: q.open,
-            high: q.high,
-            low: q.low,
-            close: q.close,
-            volume: q.volume,
-            adjclose: q.adjclose,
-        }));
-
-        return res.json({ etat: true, detail: reponse });
-    },
-    "controleurTest",
-    "Erreur lors du test"
 );
