@@ -107,7 +107,7 @@ export default function Accueil() {
                                 </tbody>
                             </table>
                         )}
-                        {action && <PresentationAction ticker={action} />}
+                        {action && <PresentationAction idComposant={action} />}
                     </div>
                 </>
             )}

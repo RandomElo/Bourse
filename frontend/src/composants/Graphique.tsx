@@ -73,7 +73,7 @@ export default function Graphique({ donnees, donneesValorisation, duree, rendeme
                 setData(donneesFiltree);
             }
         })();
-    }, []);
+    }, [donnees, donneesValorisation]);
 
     const CustomTooltip: React.FC<{
         active?: boolean;

@@ -205,62 +205,20 @@ export const recuperationGraphiqueValorisation = gestionErreur(
         const historiqueActions = {};
         const quantitesCumul = {}; // idAction → { date → quantité }
 
+        const aujourdHui = new Date();
+
         for (const idAction of Object.keys(actionsMap)) {
             const action = await req.Action.findByPk(idAction, { raw: true });
             if (!action) continue;
 
-            const { ticker, ouverture } = action;
-
-            const miseEnFormeDate = (date) => date.toISOString().split("T")[0];
-
-            const aujourdhui = new Date();
-
-            let period1;
-            let period2;
-            let interval;
-
-            if (!duree || duree == "1 j") {
-                const heureActuelle = aujourdhui.toLocaleTimeString("fr-FR");
-                if (heureActuelle < ouverture) {
-                    period1 = miseEnFormeDate(hier);
-                } else {
-                    period1 = miseEnFormeDate(aujourdhui);
-                }
-                interval = "1m";
-            } else if (duree == "5 j") {
-                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 5 * 24 * 60 * 60 * 1000));
-                interval = "5m";
-            } else if (duree == "1 m") {
-                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 30 * 24 * 60 * 60 * 1000));
-                interval = "30m";
-            } else if (duree == "6 m") {
-                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 183 * 24 * 60 * 60 * 1000));
-                interval = "1d";
-            } else if (duree == "1 a") {
-                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 365 * 24 * 60 * 60 * 1000));
-                interval = "1d";
-            } else if (duree == "5 a") {
-                period1 = miseEnFormeDate(new Date(aujourdhui.getTime() - 5 * 365 * 24 * 60 * 60 * 1000));
-                interval = "1d";
-            } else if (duree == "MAX") {
-                period1 = "1970-01-01";
-                interval = "1d";
-            }
-
-            // Si c'est nécessaire j'ajoute un date de fin
-            if (["1 m", "6 m", "1 a", "5 a", "MAX"].includes(duree)) {
-                period2 = miseEnFormeDate(aujourdhui);
-            }
-
-            let options = {
-                period1,
-                interval,
-                return: "object",
-            };
-            if (period2) options.period2 = period2;
+            const { ticker } = action;
 
             // Récupération du cours depuis 1970
-            const donneesGraphiques = await finance.chart(ticker, options);
+            const donneesGraphiques = await finance.chart(ticker, {
+                period1: "1970-01-01",
+                interval: "1d",
+                return: "object",
+            });
             const timestamps = donneesGraphiques.timestamp;
             const fermetures = donneesGraphiques.indicators.quote[0].close;
 
@@ -291,7 +249,7 @@ export const recuperationGraphiqueValorisation = gestionErreur(
         // Construction de la valorisation totale du portefeuille jour par jour
         const datesReference = Object.values(historiqueActions)[0] ? Object.keys(Object.values(historiqueActions)[0]).sort() : [];
 
-        const valorisationTotale = [];
+        let valorisationTotale = [];
 
         for (const date of datesReference) {
             let somme = 0;
@@ -312,6 +270,28 @@ export const recuperationGraphiqueValorisation = gestionErreur(
             }
         }
 
+        if (duree && duree !== "MAX") {
+            switch (duree) {
+                case "5 j":
+                    valorisationTotale = valorisationTotale.slice(-5);
+                    break;
+                case "1 m":
+                    valorisationTotale = valorisationTotale.slice(-30);
+                    break;
+                case "6 m":
+                    valorisationTotale = valorisationTotale.slice(-180);
+                    break;
+                case "1 a":
+                    valorisationTotale = valorisationTotale.slice(-365);
+                    break;
+                case "5 a":
+                    valorisationTotale = valorisationTotale.slice(-1825);
+                    break;
+                default:
+                    // rien à faire pour MAX
+                    break;
+            }
+        }
         return res.json({ etat: true, detail: valorisationTotale });
     },
     "controleurRecuperationGraphiqueValorisation",

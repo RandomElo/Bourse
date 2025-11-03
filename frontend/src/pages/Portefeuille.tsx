@@ -1,6 +1,6 @@
 import "../styles/Portefeuille.css";
 import { useRequete } from "../fonctions/requete";
-import { ChevronDown, ChevronUp, ClipboardSignature } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -8,6 +8,7 @@ import RendementAction from "../composants/RendementAction";
 import CartePerformances from "../composants/CartePerformances";
 import Graphique from "../composants/Graphique";
 import DureeGraphique from "../composants/DureeGraphique";
+import PresentationAction from "../composants/PresentationAction";
 
 // Type pour les transactions - reçu dans donner et trier apres pour remoduler les actions
 interface Transactions {
@@ -144,8 +145,6 @@ export default function Portefeuille() {
     useEffect(() => {
         const recuperationGraphiqueValorisation = async () => {
             const reponse = await requete({ url: `/portefeuille/recuperation-graphique-valorisation?id=${id}&duree=${dureeGraphique}` });
-            console.log(reponse);
-            // if (reponse.length === 0) alert("Erreur");
 
             const premierPrix = reponse[0].valeur;
             const dernierPrix = reponse[reponse.length - 1].valeur;
@@ -238,12 +237,8 @@ export default function Portefeuille() {
                     ))}
                 </tbody>
             </table>
-            {donneesValorisation && (
-                <>
-                    <DureeGraphique set={setDureeGraphique} dureeGraphique={dureeGraphique} />
-                    <Graphique donneesValorisation={donneesValorisation} duree={dureeGraphique} rendement={rendemment} />
-                </>
-            )}
+            {/* Utilise PresentationAction */}
+            <PresentationAction typePresentation="portefeuille" idComposant={id} donneesPortefeuille={{ devise: donnees?.devise ? donnees.devise : null, valorisation: donnees.valorisation }} />
         </main>
     );
 }
