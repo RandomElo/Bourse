@@ -33,20 +33,20 @@ type Action = {
     gainJourPourcent: number;
     transactions: TransactionsAction[];
 };
+type DureeGraphique = "1 j" | "5 j" | "1 m" | "6 m" | "1 a" | "5 a" | "MAX";
+interface DonneesGraphique {
+    dates: Array<Date>;
+    prixFermeture: Array<number>;
+    nom: string;
+    devise: string;
+    dernierPrix?: number;
+    rendement?: number;
+    premierTrade?: string;
+}
 
 export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille }: { idComposant?: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" } }) {
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
     const [typeDonneeModal, setTypeDonneeModal] = useState<string>();
-    type DureeGraphique = "1 j" | "5 j" | "1 m" | "6 m" | "1 a" | "5 a" | "MAX";
-    interface DonneesGraphique {
-        dates: Array<Date>;
-        prixFermeture: Array<number>;
-        nom: string;
-        devise: string;
-        dernierPrix?: number;
-        rendement?: number;
-        premierTrade?: string;
-    }
 
     const [message, setMessage] = useState<string | null>(null);
     const [dureeGraphique, setDureeGraphique] = useState<DureeGraphique>(typePresentation == "action" ? "1 j" : "1 m");
@@ -62,7 +62,6 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
         // Récupération des données pour le graphique
         const recuperationDonnees = async () => {
             setChargement(true);
-            console.log(`/bourse/graphique?ticker=${idComposant}&duree=${dureeGraphique}`);
             if (typePresentation == "action") {
                 const reponse = await requete({ url: `/bourse/graphique?ticker=${idComposant}&duree=${dureeGraphique}` });
                 setTimeout(() => {
@@ -80,10 +79,9 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
                 const reponse = await requete({ url: `/portefeuille/recuperation-graphique-valorisation?id=${idComposant}&duree=${dureeGraphique}` });
 
                 setChargement(false);
-                console.log(reponse)
-                setRendement(Number((((reponse[reponse.length - 1].valeur - reponse[0].valeur) / reponse[0].valeur) * 100).toFixed(2)));
+                setRendement(Number((((reponse.tableauValorisation[reponse.tableauValorisation.length - 1].valeur - reponse.tableauValorisation[0].valeur) / reponse.tableauValorisation[0].valeur) * 100).toFixed(2)));
 
-                setDonnees(reponse);
+                setDonnees(reponse.tableauValorisation);
             }
         };
 
@@ -160,7 +158,7 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
 
                 {message ? <p id="pMessage">{message}</p> : <div id="divGraphique">{donnees ? typePresentation == "action" ? <Graphique donnees={donnees} duree={dureeGraphique} rendement={rendement} /> : <Graphique donneesValorisation={donnees} duree={dureeGraphique} rendement={rendement} /> : ""}</div>}
             </div>
-            {typePresentation == "action" && afficherModal && (
+            {typePresentation == "action" && (
                 <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)}>
                     {typeDonneeModal == "achatAction" && (
                         <div id="divAjouterAchat">

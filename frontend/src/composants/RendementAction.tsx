@@ -18,7 +18,6 @@ export default function RendementAction({ valeur, id, valorisation, mode, rendem
         if (valorisation) {
             if (mode == "calcul") {
                 const calcul = valorisation - (valorisation - valorisation * (valeur / 100));
-                console.log(calcul);
                 setRendementEnDevise(calcul);
             }
         }

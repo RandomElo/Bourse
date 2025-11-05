@@ -143,6 +143,7 @@ export const recupererListePortefeuilleEtTransaction = gestionErreur(
     "controleurRecuperationListePortefeuilleEtTransaction",
     "Erreur lors de la récupération détaillée des portefeuilles et de leur contenu"
 );
+
 // Verifie si j'ai le droit d'accèder a ce portefeuille
 export const verificationAcces = gestionErreur(
     async (req, res) => {
@@ -161,6 +162,7 @@ export const verificationAcces = gestionErreur(
     "controleurVerificationAcces",
     "Erreur lors de la vérification d'autorisation d'accès au portefeuille"
 );
+
 // Récupére les transactions pour un portefeuille
 export const recuperationDetailsUnPortefeuille = gestionErreur(
     async (req, res) => {
@@ -269,30 +271,40 @@ export const recuperationGraphiqueValorisation = gestionErreur(
                 });
             }
         }
-
-        if (duree && duree !== "MAX") {
-            switch (duree) {
-                case "5 j":
-                    valorisationTotale = valorisationTotale.slice(-5);
-                    break;
-                case "1 m":
-                    valorisationTotale = valorisationTotale.slice(-30);
-                    break;
-                case "6 m":
-                    valorisationTotale = valorisationTotale.slice(-180);
-                    break;
-                case "1 a":
-                    valorisationTotale = valorisationTotale.slice(-365);
-                    break;
-                case "5 a":
-                    valorisationTotale = valorisationTotale.slice(-1825);
-                    break;
-                default:
-                    // rien à faire pour MAX
-                    break;
-            }
+        let valorisationFinale;
+        switch (duree) {
+            case "5 j":
+                valorisationFinale = valorisationTotale.slice(-5);
+                break;
+            case "1 m":
+                valorisationFinale = valorisationTotale.slice(-30);
+                break;
+            case "6 m":
+                valorisationFinale = valorisationTotale.slice(-180);
+                break;
+            case "1 a":
+                valorisationFinale = valorisationTotale.slice(-365);
+                break;
+            case "5 a":
+                valorisationFinale = valorisationTotale.slice(-1825);
+                break;
+            default:
+                // rien à faire pour MAX
+                valorisationFinale = valorisationTotale;
+                break;
         }
-        return res.json({ etat: true, detail: valorisationTotale });
+        const premierValorisation = Number(valorisationTotale[0].valeur);
+        const valorisationHier = Number(valorisationFinale[valorisationFinale.length - 2].valeur);
+        const valorisationAujourdhui = Number(valorisationFinale[valorisationFinale.length - 1].valeur);
+        const reponse = {
+            nom: portefeuille.nom,
+            valorisation: valorisationAujourdhui,
+            gainTotal: Number((((valorisationAujourdhui - premierValorisation) / premierValorisation) * 100).toFixed(2)),
+            gainAujourdhui: Number((((valorisationAujourdhui - valorisationHier) / valorisationHier) * 100).toFixed(2)),
+            tableauValorisation: valorisationFinale,
+        };
+
+        return res.json({ etat: true, detail: reponse });
     },
     "controleurRecuperationGraphiqueValorisation",
     "Erreur lors de les récupérations des informations sur la valorisation des actifs dans le portefeuilles"

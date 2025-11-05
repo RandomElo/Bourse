@@ -39,7 +39,6 @@ export default function MesPortefeuilles() {
     useEffect(() => {
         const recuperationDonnees = async () => {
             const reponse = await requete({ url: "/portefeuille/recuperation-portefeuilles-details" });
-            console.log(reponse);
             setDonnees(reponse);
         };
         recuperationDonnees();
@@ -65,9 +64,7 @@ export default function MesPortefeuilles() {
                         {donnees.map((portefeuille, index) => (
                             <tr key={portefeuille.id} className={ligneSurvolee == portefeuille.id ? "survolee" : ""}>
                                 <td className="celluleNom">{portefeuille.nom}</td>
-                                <td className="celluleGain">{portefeuille.valorisation !== "Calcul impossible" ? 
-                                    <RendementAction valeur={Number(portefeuille.gainAujourdhui)} valorisation={portefeuille.valorisation} mode="calcul" /> : 
-                                    <RendementAction valeur={Number(portefeuille.gainAujourdhui)} />}</td>
+                                <td className="celluleGain">{portefeuille.valorisation !== "Calcul impossible" ? <RendementAction valeur={Number(portefeuille.gainAujourdhui)} valorisation={portefeuille.valorisation} mode="calcul" /> : <RendementAction valeur={Number(portefeuille.gainAujourdhui)} />}</td>
                                 <td className="celluleValorisation">{portefeuille.valorisation !== "Calcul impossible" ? `${portefeuille.valorisation} ${portefeuille.devise}` : portefeuille.valorisation}</td>
                                 <td
                                     className="celluleLienDetail"

@@ -6,9 +6,9 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import RendementAction from "../composants/RendementAction";
 import CartePerformances from "../composants/CartePerformances";
-import Graphique from "../composants/Graphique";
-import DureeGraphique from "../composants/DureeGraphique";
 import PresentationAction from "../composants/PresentationAction";
+import Chargement from "../composants/Chargement";
+import Modal from "../composants/Modal";
 
 // Type pour les transactions - reçu dans donner et trier apres pour remoduler les actions
 interface Transactions {
@@ -57,6 +57,14 @@ type Action = {
     transactions: TransactionsAction[];
 };
 
+type DonneesDetails = {
+    nom: string;
+    valorisation: number;
+    gainTotal: number;
+    gainAujourdhui: number;
+    tableauValorisation: Array<{ date: Date; valeur: number }>;
+};
+
 export default function Portefeuille() {
     const { id } = useParams();
     const location = useLocation();
@@ -65,15 +73,14 @@ export default function Portefeuille() {
     const { estAuth, chargement } = useAuth();
 
     const [donnees, setDonnees] = useState<Donnees | null>(null);
+    const [donneesDetail, setDonneesDetails] = useState<DonneesDetails>();
     const [actions, setActions] = useState<Array<Action> | null>(null);
-    const [donneesValorisation, setDonnesValorisation] = useState<Array<{ date: string; valeur: number }> | null>(null);
-    const [rendemment, setRendement] = useState<number>(0);
-    const [dureeGraphique, setDureeGraphique] = useState<"1 j" | "5 j" | "1 m" | "6 m" | "1 a" | "5 a" | "MAX">("MAX");
 
     const [idLigneSurvolee, setIdLigneSurvolee] = useState<number | null>(null);
     const [idLigneAfficherDetail, setIdLigneAfficherDetails] = useState<number | null>(null);
     const [detailsTransactions, setDetailsTransactions] = useState<TransactionsAction[] | null>(null);
-
+    const [pagePrete, setPagePrete] = useState<boolean>(false);
+    const [afficherModal, setAfficherModal] = useState<boolean>(false);
     useEffect(() => {
         if (!estAuth) {
             navigation("/connexion");
@@ -133,7 +140,14 @@ export default function Portefeuille() {
                     action.gainJourValeur = Number((action.valorisationTotale - valorisationHier).toFixed(2));
                     action.gainJourPourcent = valorisationHier > 0 ? Number(((action.gainJourValeur / valorisationHier) * 100).toFixed(2)) : 0;
                 });
+
                 setActions(Object.values(resultats));
+
+                // Il faut que je fasse la requete
+
+                const reponseGraphiqueValorisation = await requete({ url: `/portefeuille/recuperation-graphique-valorisation?id=${id}&duree=5 j` });
+                setDonneesDetails(reponseGraphiqueValorisation);
+                setPagePrete(true);
             } else {
                 navigation("/");
             }
@@ -142,31 +156,19 @@ export default function Portefeuille() {
         verificationAccesMiseEnFormeDonnees();
     }, []);
 
-    useEffect(() => {
-        const recuperationGraphiqueValorisation = async () => {
-            const reponse = await requete({ url: `/portefeuille/recuperation-graphique-valorisation?id=${id}&duree=${dureeGraphique}` });
-
-            const premierPrix = reponse[0].valeur;
-            const dernierPrix = reponse[reponse.length - 1].valeur;
-            setRendement(Number((((dernierPrix - premierPrix) / premierPrix) * 100).toFixed(2)));
-            setDonnesValorisation(reponse);
-        };
-        recuperationGraphiqueValorisation();
-    }, [dureeGraphique]);
-
-    if (chargement || !actions || !donnees) return null;
+    if (chargement || !actions || !donnees || !donneesDetail || !pagePrete) return <Chargement />;
 
     return (
         <main className="Portefeuille">
             <h1 id="titre">{donnees.nom}</h1>
             <CartePerformances
                 gainDuJour={{
-                    valeurMonetaire: (Number(donnees.valorisation) * Number(donnees.gainAujourdhui)) / 100,
-                    valeurPourcentage: Number(donnees.gainAujourdhui),
+                    valeurMonetaire: (Number(donnees.valorisation) * donneesDetail.gainAujourdhui) / 100,
+                    valeurPourcentage: donneesDetail.gainAujourdhui,
                 }}
                 gainTotal={{
-                    valeurMonetaire: Number(donnees.valorisation) * (1 + Number(donnees.gainTotal) / 100) - Number(donnees.valorisation),
-                    valeurPourcentage: Number(donnees.gainTotal),
+                    valeurMonetaire: Number(donnees.valorisation) * (1 + donneesDetail.gainTotal / 100) - Number(donnees.valorisation),
+                    valeurPourcentage: donneesDetail.gainTotal,
                 }}
                 devise={donnees?.devise}
             />
@@ -231,14 +233,23 @@ export default function Portefeuille() {
                                             </td>
                                         </tr>
                                     ))}
+                                    <tr className="trAjouterUneVente">
+                                        <td colSpan={5}>
+                                            <a className="bouton" onClick={() => setAfficherModal(true)}>
+                                                Ajouter une vente
+                                            </a>
+                                        </td>
+                                    </tr>
                                 </>
                             )}
                         </React.Fragment>
                     ))}
                 </tbody>
             </table>
-            {/* Utilise PresentationAction */}
+
             <PresentationAction typePresentation="portefeuille" idComposant={id} donneesPortefeuille={{ devise: donnees?.devise ? donnees.devise : null, valorisation: donnees.valorisation }} />
+
+            <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)} />
         </main>
     );
 }
