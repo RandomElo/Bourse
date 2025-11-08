@@ -1,1 +1,10 @@
 Faire un truc qui formate les données de graph de facon plus globale
+Empecher les données avec trop peut de point d'être afficher dans le champs de recherche
+afficher un loader pour le champs de recherhce
+modal achat probleme de taille
+valeur action a 0
+regler la taille des tooltip sur le graphique portefeuille
+verifier la devise sur les tooltip
+sur les inputs de form décider si c'est un float ou un int
+quand j'enregistrer un acaht et que ce n'est pas a moi verifiier ce qu'affice les messages retournée
+il faut que je supprime le faite d'envoyer des données par le state pour portefeuille et que je s'implifie la requete de mes portefeuillees

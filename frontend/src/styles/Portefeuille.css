@@ -61,5 +61,53 @@
                 padding-bottom: 10px;
             }
         }
+        .colonnePoubelle {
+            width: 45px;
+            cursor: pointer;
+        }
+    }
+    #divEnregistrerVente {
+        form {
+            width: 312px;
+            margin: 0 auto;
+        }
+        #divDonneesFormulaires {
+            .ChampDonneesForm {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                width: 100%;
+                gap: 10px;
+            }
+            #divnomAction,
+            #divinputQuantite,
+            #divinputPrix {
+                text-align: right;
+            }
+            #divinputDate {
+                justify-content: space-between;
+                label {
+                    width: 158px;
+                    text-align: right;
+                }
+                input {
+                    width: 195px;
+                }
+            }
+            #nomAction {
+                cursor: not-allowed;
+            }
+        }
+        #divBoutonEnregistrer {
+            margin-top: 15px;
+            button {
+                margin: auto;
+                display: flex;
+                align-items: center;
+                .chargement {
+                    margin-right: 10px;
+                }
+            }
+        }
     }
 }

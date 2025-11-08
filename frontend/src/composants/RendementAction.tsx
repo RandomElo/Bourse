@@ -11,7 +11,7 @@ export default function RendementAction({ valeur, id, valorisation, mode, rendem
     const [rendementEnPourcentage, setRendementEnPourcentage] = useState<string | null>(null); // Rendement en pourcentage
 
     const miseEnForme = (valeur: number) => {
-        return `${valeur > 0 ? "+" : "-"} ${Math.abs(valeur).toFixed(2)}`;
+        return `${valeur > 0 ? "+" : valeur !== 0 ? "-" : "+"} ${Math.abs(valeur).toFixed(2)}`;
     };
 
     useEffect(() => {
@@ -21,7 +21,7 @@ export default function RendementAction({ valeur, id, valorisation, mode, rendem
                 setRendementEnDevise(calcul);
             }
         }
-        if (rendementDevise) {
+        if (rendementDevise !== undefined) {
             setRendementEnDevise(rendementDevise);
         }
         setRendementEnPourcentage(`${miseEnForme(valeur)} %`);
@@ -41,12 +41,14 @@ export default function RendementAction({ valeur, id, valorisation, mode, rendem
         maxWidth: "max-content",
     };
 
-    const styleCardSelonValeur = valeur > 0 ? { color: "#137333", backgroundColor: "#e6f4ea" } : { color: "#a50e0e", backgroundColor: "#fce8e6" };
-    if (!valeur) return null;
+    const styleCardSelonValeur = valeur > 0 ? { color: "#137333", backgroundColor: "#e6f4ea" } : valeur !== 0 ? { color: "#a50e0e", backgroundColor: "#fce8e6" } : { color: "#3c4043", backgroundColor: "#e8eaed" };
+    if (valeur == null) return null;
     return (
         <div id={id} style={styleDiv}>
-            {rendementEnDevise && <p style={rendementEnDevise > 0 ? { color: "#137333" } : { color: "#a50e0e" }}>{miseEnForme(rendementEnDevise)}</p>}
+            {rendementEnDevise !== null && <p style={rendementEnDevise > 0 ? { color: "#137333" } : valeur !== 0 ? { color: "#a50e0e" } : { color: "#3c4043" }}>{miseEnForme(rendementEnDevise)}</p>}
             <p style={{ ...styleCard, ...styleCardSelonValeur }}>{rendementEnPourcentage}</p>
         </div>
     );
 }
+// background rgb(232,234,237)
+// `color rgb(60,64,67)

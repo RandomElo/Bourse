@@ -53,7 +53,7 @@ export const rechercheAction = gestionErreur(
                 if (!action.symbol || action.quoteType != "EQUITY") continue;
                 // Récupération pour une valeur témoin
                 const donnees = await finance.chart(action.symbol, {
-                    period1: "2025-10-24",
+                    period1: "2025-11-07",
                     interval: "1m",
                     return: "object",
                 });

@@ -36,6 +36,7 @@ const recuperationsDetailsPortefeuille = async (req, idPortefeuille) => {
 
         detailsActions[action.id] = {
             nom: action.nom,
+            idAction: action.id,
             prixActuel: quote.regularMarketPrice,
             prixHier: quote.regularMarketPreviousClose,
             devise,
@@ -308,4 +309,101 @@ export const recuperationGraphiqueValorisation = gestionErreur(
     },
     "controleurRecuperationGraphiqueValorisation",
     "Erreur lors de les récupérations des informations sur la valorisation des actifs dans le portefeuilles"
+);
+export const enregistrerVente = gestionErreur(
+    async (req, res) => {
+        const { quantite, prix, date, idAction, idPortefeuille } = req.body;
+
+        // Vérification de la présence des paramètres
+        if (!quantite || !prix || !date || !idAction || !idPortefeuille) {
+            throw new Error("Éléments de requête absent");
+        }
+
+        // Vérifie que l'action existe
+        const action = await req.Action.findByPk(idAction);
+        if (!action) {
+            throw new Error("Action non enregistrée");
+        }
+
+        // Vérifie que le portefeuille existe et appartient bien à l'utilisateur
+        const portefeuille = await req.Portefeuille.findByPk(idPortefeuille);
+        if (portefeuille && portefeuille.idUtilisateur !== req.idUtilisateur) {
+            throw new Error("Utilisateur non correspondant");
+        }
+
+        // Récupère toutes les transactions associées à cette action
+        const transactions = await req.Transaction.findAll({
+            where: { idAction, idPortefeuille },
+            order: [["date", "ASC"]],
+            raw: true,
+        });
+
+        if (transactions.length == 0) {
+            throw new Error("Aucune transaction avec le portefeuille");
+        }
+
+        // Vérifie que la date est cohérente
+        const dateVente = new Date(date);
+        const datePremierAchat = new Date(transactions[0].date);
+        if (dateVente < datePremierAchat) {
+            return res.json({
+                etat: false,
+                detail: { erreur: "La date de vente est antérieure au premier achat." },
+            });
+        }
+
+        // Calcul de la somme actuellement détenu
+        let quantiteDetenue = 0;
+        for (const transaction of transactions) {
+            quantiteDetenue += transaction.type === "achat" ? transaction.quantite : -transaction.quantite;
+        }
+
+        if (quantiteDetenue <= 0) {
+            return res.json({ etat: true, detail: { erreur: "Aucune action disponible à la vente." } });
+        }
+
+        if (quantite > quantiteDetenue) {
+            return res.json({
+                etat: false,
+                detail: { erreur: "Quantité à vendre supérieure à la quantité détenue." },
+            });
+        }
+
+        // ------ CALCULS
+        // --- Calcul du prix moyen
+        let quantiteCourante = 0;
+        let coutTotal = 0;
+        for (const transaction of transactions) {
+            const dateTransaction = new Date(transaction.date);
+            if (dateTransaction >= dateVente) break; // on s'arrêtre aux transactions avant la vente
+
+            if (transaction.type === "achat") {
+                coutTotal += transaction.prix * transaction.quantite;
+                quantiteCourante += transaction.quantite;
+            } else if (transaction.type == "vente") {
+                if (quantiteCourante > 0) {
+                    const prixMoyenAvantVente = coutTotal / quantiteCourante;
+                    coutTotal -= prixMoyenAvantVente * transaction.quantite;
+                    quantiteCourante -= transaction.quantite;
+                }
+            }
+        }
+
+        if (quantiteCourante <= 0) {
+            return res.json({ etat: false, detail: { erreur: "Aucune position avant cette date." } });
+        }
+
+        const prixMoyenUnitaire = coutTotal / quantiteCourante;
+
+        // --- Calcul gain de la vente
+        const gainValeur = (prix - prixMoyenUnitaire) * quantite;
+        const gainPourcent = (prix / prixMoyenUnitaire - 1) * 100;
+
+        // Enregistrement de la vente
+        await req.Transaction.create({ type: "vente", quantite, prix, idPortefeuille, idAction, date, gainPourcentage: Number(gainPourcent.toFixed(2)), gainValeur: Number(gainValeur.toFixed(2)) });
+
+        return res.json({ etat: true, detail: "dev" });
+    },
+    "controleurEnregistrerVente",
+    "Erreur lors de l'enregistrement de la vente"
 );

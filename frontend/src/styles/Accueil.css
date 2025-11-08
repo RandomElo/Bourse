@@ -96,13 +96,17 @@
             #divinputNbrAction label {
                 text-align: right;
             }
+            #divinputPrixAction label {
+                text-align: right;
+            }
             #divinputDateAchat {
                 justify-content: space-between;
                 label {
-                    width: 144px;
+                    width: 158px;
+                    text-align: right;
                 }
                 input {
-                    width: 173px;
+                    width: 159px;
                 }
             }
             #divSelectionPortefeuille {

@@ -1,6 +1,6 @@
 import "../styles/Portefeuille.css";
 import { useRequete } from "../fonctions/requete";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -9,10 +9,12 @@ import CartePerformances from "../composants/CartePerformances";
 import PresentationAction from "../composants/PresentationAction";
 import Chargement from "../composants/Chargement";
 import Modal from "../composants/Modal";
+import ChampDonneesForm from "../composants/ChampDonneesForm";
 
 // Type pour les transactions - reçu dans donner et trier apres pour remoduler les actions
 interface Transactions {
     id: number;
+    idAction: string;
     type: "achat" | "vente";
     quantite: number;
     date: string;
@@ -21,6 +23,9 @@ interface Transactions {
     prixHier: number;
     nom: string;
     devise: string;
+
+    gainPourcentage?: number;
+    gainValeur?: number;
 }
 // Type pour les données que je recoit
 interface Donnees {
@@ -42,11 +47,15 @@ interface TransactionsAction {
     prix: number;
     gainTransactionValeur: string;
     gainTransactionPourcent: string;
+
+    gainPourcentage?: number;
+    gainValeur?: number;
 }
 
 // Type pour les transactions remoduler, où les transaction sont trier par actions
 type Action = {
     nom: string;
+    idAction: string;
     devise: string;
     prix: number;
     prixHier: number;
@@ -81,6 +90,80 @@ export default function Portefeuille() {
     const [detailsTransactions, setDetailsTransactions] = useState<TransactionsAction[] | null>(null);
     const [pagePrete, setPagePrete] = useState<boolean>(false);
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
+    const [detailsModal, setDetailsModal] = useState<{ nom: string; idAction: string }>({ nom: "", idAction: "" });
+    const [chargementRequete, setChargementRequete] = useState<boolean>(false);
+
+    // Fonctions
+
+    // Verification des infos et récupérations des données
+    const miseEnFormeContenuPortefeuille = async ({ idAction }: { idAction?: null | string }) => {
+        const reponse = await requete({ url: `/portefeuille/recuperation-details-un-portefeuille/${id}` });
+        console.log(reponse);
+        setDonnees(reponse);
+
+        // objet avec une clé string et une valeur du type def
+        const resultats: Record<string, Action> = {};
+        reponse.listeTransactions.forEach((transaction: Transactions) => {
+            // si cela n'existe pas déja je met en place les détails de l'action
+            if (!resultats[transaction.nom]) {
+                resultats[transaction.nom] = {
+                    nom: transaction.nom,
+                    idAction: transaction.idAction,
+                    devise: transaction.devise,
+                    prix: transaction.prixActuel,
+                    prixHier: transaction.prixHier,
+                    quantiteTotale: 0,
+                    valorisationTotale: 0,
+                    gainJourValeur: 0,
+                    gainJourPourcent: 0,
+                    transactions: [],
+                };
+            }
+
+            const action = resultats[transaction.nom];
+            // Ajouter la transaction
+            const gainTransactionValeur = (transaction.prixActuel - transaction.prix) * transaction.quantite;
+            const gainTransactionPourcent = ((transaction.prixActuel - transaction.prix) / transaction.prix) * 100;
+
+            // Je met en forme la liste des transactions pour chaque action
+            const objetTransaction = {
+                id: transaction.id,
+                type: transaction.type,
+                quantite: transaction.quantite,
+                date: transaction.date,
+                prix: transaction.prix,
+                gainTransactionValeur: gainTransactionValeur.toFixed(2),
+                gainTransactionPourcent: gainTransactionPourcent.toFixed(2),
+                gainPourcentage: 0,
+                gainValeur: 0,
+            };
+            if (transaction.type == "vente") {
+                objetTransaction.gainPourcentage = transaction.gainPourcentage!;
+                objetTransaction.gainValeur = transaction.gainValeur!;
+            }
+            action.transactions.push(objetTransaction);
+            action.quantiteTotale += transaction.type === "achat" ? transaction.quantite : -transaction.quantite;
+        });
+
+        Object.values(resultats).forEach((action) => {
+            const prixActuelGlobal = action.prix; // même prix pour toutes les transactions
+
+            action.valorisationTotale = action.quantiteTotale * prixActuelGlobal;
+
+            const valorisationHier = action.prixHier * action.quantiteTotale;
+            action.gainJourValeur = Number((action.valorisationTotale - valorisationHier).toFixed(2));
+            action.gainJourPourcent = valorisationHier > 0 ? Number(((action.gainJourValeur / valorisationHier) * 100).toFixed(2)) : 0;
+        });
+        setActions(Object.values(resultats));
+
+        // Il faut que je fasse la requete
+
+        const reponseGraphiqueValorisation = await requete({ url: `/portefeuille/recuperation-graphique-valorisation?id=${id}&duree=5 j` });
+        setDonneesDetails(reponseGraphiqueValorisation);
+
+        if (idAction) return Object.values(resultats).filter((action) => action.idAction == idAction);
+    };
+
     useEffect(() => {
         if (!estAuth) {
             navigation("/connexion");
@@ -88,72 +171,16 @@ export default function Portefeuille() {
     }, [estAuth, navigation]);
 
     useEffect(() => {
-        const verificationAccesMiseEnFormeDonnees = async () => {
+        const verificationAcces = async () => {
             const reponse = await requete({ url: `/portefeuille/verification-acces/${id}` });
             if (reponse) {
-                setDonnees(location.state?.donnees);
-
-                // objet avec une clé string et une valeur du type def
-                const resultats: Record<string, Action> = {};
-
-                location.state?.donnees.listeTransactions.forEach((transaction: Transactions) => {
-                    // si cela n'existe pas déja je met en place les détails de l'action
-                    if (!resultats[transaction.nom]) {
-                        resultats[transaction.nom] = {
-                            nom: transaction.nom,
-                            devise: transaction.devise,
-                            prix: transaction.prixActuel,
-                            prixHier: transaction.prixHier,
-                            quantiteTotale: 0,
-                            valorisationTotale: 0,
-                            gainJourValeur: 0,
-                            gainJourPourcent: 0,
-                            transactions: [],
-                        };
-                    }
-
-                    const action = resultats[transaction.nom];
-
-                    // Ajouter la transaction
-                    const gainTransactionValeur = (transaction.prixActuel - transaction.prix) * transaction.quantite;
-                    const gainTransactionPourcent = ((transaction.prixActuel - transaction.prix) / transaction.prix) * 100;
-
-                    // Je met en forme la liste des transactions pour chaque action
-                    action.transactions.push({
-                        id: transaction.id,
-                        type: transaction.type,
-                        quantite: transaction.quantite,
-                        date: transaction.date,
-                        prix: transaction.prix,
-                        gainTransactionValeur: gainTransactionValeur.toFixed(2),
-                        gainTransactionPourcent: gainTransactionPourcent.toFixed(2),
-                    });
-                    action.quantiteTotale += transaction.type === "achat" ? transaction.quantite : -transaction.quantite;
-                });
-
-                Object.values(resultats).forEach((action) => {
-                    const prixActuelGlobal = action.prix; // même prix pour toutes les transactions
-
-                    action.valorisationTotale = action.quantiteTotale * prixActuelGlobal;
-
-                    const valorisationHier = action.prixHier * action.quantiteTotale;
-                    action.gainJourValeur = Number((action.valorisationTotale - valorisationHier).toFixed(2));
-                    action.gainJourPourcent = valorisationHier > 0 ? Number(((action.gainJourValeur / valorisationHier) * 100).toFixed(2)) : 0;
-                });
-
-                setActions(Object.values(resultats));
-
-                // Il faut que je fasse la requete
-
-                const reponseGraphiqueValorisation = await requete({ url: `/portefeuille/recuperation-graphique-valorisation?id=${id}&duree=5 j` });
-                setDonneesDetails(reponseGraphiqueValorisation);
+                await miseEnFormeContenuPortefeuille({});
                 setPagePrete(true);
             } else {
                 navigation("/");
             }
         };
-
-        verificationAccesMiseEnFormeDonnees();
+        verificationAcces();
     }, []);
 
     if (chargement || !actions || !donnees || !donneesDetail || !pagePrete) return <Chargement />;
@@ -205,7 +232,10 @@ export default function Portefeuille() {
                                             setDetailsTransactions(null);
                                         } else {
                                             setIdLigneAfficherDetails(index);
+                                            console.log(action.transactions);
+                                            // console.log(detailsTransactions.filter((transaction) => transaction.type == "vente"));
                                             setDetailsTransactions(action.transactions);
+                                            console.log(action.transactions);
                                         }
                                     }}
                                     className="colonneChevron"
@@ -215,27 +245,69 @@ export default function Portefeuille() {
                             </tr>
                             {idLigneAfficherDetail === index && (
                                 <>
-                                    <tr className={`trListeTransactions`}>
-                                        <th>Date</th>
+                                    <tr className="trListeTransactions">
+                                        <th>Date d'achat</th>
                                         <th>Prix</th>
                                         <th>Quantité</th>
                                         <th>Valeur</th>
                                         <th>Rendement</th>
+                                        <th></th>
                                     </tr>
-                                    {detailsTransactions?.map((transaction, index) => (
-                                        <tr key={index} className={`trListeTransactions ${detailsTransactions.length - 1 == index ? "derniereLigneTransaction" : ""}`}>
-                                            <td className="colonneCentrer">{transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1) + " le : " + transaction.date}</td>
-                                            <td className="colonneCentrer">{transaction.prix + " " + action.devise}</td>
-                                            <td className="colonneCentrer">{transaction.quantite}</td>
-                                            <td className="colonneCentrer">{transaction.prix * transaction.quantite + " " + action.devise}</td>
-                                            <td>
-                                                <RendementAction mode={"defini"} valeur={Number(transaction.gainTransactionPourcent)} rendementDevise={Number(transaction.gainTransactionValeur)} />
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {detailsTransactions?.map(
+                                        (transaction, index) =>
+                                            transaction.type == "achat" && (
+                                                <tr key={index} className={`trListeTransactions ${detailsTransactions.length - 1 == index ? "derniereLigneTransaction" : ""}`}>
+                                                    <td className="colonneCentrer">{transaction.date}</td>
+                                                    <td className="colonneCentrer">{transaction.prix + " " + action.devise}</td>
+                                                    <td className="colonneCentrer">{transaction.quantite}</td>
+                                                    <td className="colonneCentrer">{transaction.prix * transaction.quantite + " " + action.devise}</td>
+                                                    <td>
+                                                        <RendementAction mode={"defini"} valeur={Number(transaction.gainTransactionPourcent)} rendementDevise={Number(transaction.gainTransactionValeur)} />
+                                                    </td>
+                                                    <td></td>
+                                                </tr>
+                                            )
+                                    )}
+                                    {detailsTransactions && detailsTransactions.filter((transaction) => transaction.type == "vente").length > 0 && (
+                                        <>
+                                            <tr className="trListeTransactions">
+                                                <th>Date de vente</th>
+                                                <th>Prix</th>
+                                                <th>Quantité</th>
+                                                <th>Valeur</th>
+                                                <th>Gain total</th>
+                                                <th></th>
+                                            </tr>
+                                            {detailsTransactions.map(
+                                                (transaction, index) =>
+                                                    transaction.type == "vente" && (
+                                                        <tr key={index} className={`trListeTransactions ${detailsTransactions.length - 1 == index ? "derniereLigneTransaction" : ""}`}>
+                                                            <td className="colonneCentrer">{transaction.date}</td>
+                                                            <td className="colonneCentrer">{transaction.prix + " " + action.devise}</td>
+                                                            <td className="colonneCentrer">{transaction.quantite}</td>
+                                                            <td className="colonneCentrer">{transaction.prix * transaction.quantite + " " + action.devise}</td>
+                                                            <td>
+                                                                <RendementAction mode={"defini"} valeur={transaction.gainPourcentage!} rendementDevise={transaction.gainValeur!} />
+                                                            </td>
+                                                            <td className="colonnePoubelle">
+                                                                {/* il faut que j'affiche la poubelle que quand je survolle la ligne */}
+                                                                <Trash2 />
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                            )}
+                                        </>
+                                    )}
+
                                     <tr className="trAjouterUneVente">
                                         <td colSpan={5}>
-                                            <a className="bouton" onClick={() => setAfficherModal(true)}>
+                                            <a
+                                                className="bouton"
+                                                onClick={() => {
+                                                    setDetailsModal({ nom: action.nom, idAction: action.idAction });
+                                                    setAfficherModal(true);
+                                                }}
+                                            >
                                                 Ajouter une vente
                                             </a>
                                         </td>
@@ -249,7 +321,59 @@ export default function Portefeuille() {
 
             <PresentationAction typePresentation="portefeuille" idComposant={id} donneesPortefeuille={{ devise: donnees?.devise ? donnees.devise : null, valorisation: donnees.valorisation }} />
 
-            <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)} />
+            <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)}>
+                <div id="divEnregistrerVente">
+                    <h2>Enregistrer une vente</h2>
+                    <form
+                        onSubmit={async (e) => {
+                            e.preventDefault();
+                            setChargementRequete(true);
+                            const quantite = e.currentTarget.querySelector<HTMLInputElement>("#inputQuantite")?.value;
+                            const prix = e.currentTarget.querySelector<HTMLInputElement>("#inputPrix")?.value;
+                            const date = e.currentTarget.querySelector<HTMLInputElement>("#inputDate")?.value;
+                            const contenuRequete = {
+                                quantite,
+                                prix,
+                                date,
+                                idAction: detailsModal.idAction,
+                                idPortefeuille: id,
+                            };
+
+                            const reponse = await requete({ url: "/portefeuille/enregistrer-vente", methode: "POST", corps: contenuRequete });
+                            // il faut que je m'occupe de trier les erreurs que peut me retourner le back
+
+                            const action = await miseEnFormeContenuPortefeuille({ idAction: detailsModal.idAction });
+                            setDetailsTransactions(action![0].transactions);
+
+                            // il faut que que je mette a jours les détails de l'action (liste des transactions)
+
+                            // /portefeuille/recuperation-portefeuilles-details ce qui est dans données
+                            setTimeout(() => {
+                                setChargementRequete(false);
+                            }, 200);
+                        }}
+                    >
+                        <div id="divDonneesFormulaires">
+                            <ChampDonneesForm id="nomAction" label="Nom de l'action :" typeInput="text" value={detailsModal.nom} modificationDesactiver={true} />
+                            <ChampDonneesForm id="inputQuantite" label="Quantité :" typeInput="number" />
+                            <ChampDonneesForm id="inputPrix" label="Prix :" typeInput="number" />
+                            <ChampDonneesForm label="Date :" typeInput="date" id="inputDate" />
+                        </div>
+                        <div id="divBoutonEnregistrer">
+                            <button type="submit" className="bouton">
+                                {chargementRequete ? (
+                                    <>
+                                        <Loader2 className="chargement" />
+                                        <span>Chargement ...</span>
+                                    </>
+                                ) : (
+                                    "Enregistrer"
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
         </main>
     );
 }

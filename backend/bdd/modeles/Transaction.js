@@ -23,6 +23,12 @@ export default function (bdd) {
             type: DataTypes.STRING(10),
             allowNull: false,
         },
+        gainValeur: {
+            type: DataTypes.DECIMAL(20, 8),
+        },
+        gainPourcentage: {
+            type: DataTypes.DECIMAL(20, 8),
+        },
     });
     return Transaction;
 }

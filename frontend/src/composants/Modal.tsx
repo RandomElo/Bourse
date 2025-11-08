@@ -12,7 +12,7 @@ export default function Modal({ estOuvert, fermeture, children }: Props) {
     return (
         <div className="Modal" onClick={fermeture}>
             <div className="modalContenu" onClick={(e) => e.stopPropagation()}>
-                <X className="boutonFermer" width={30} height={30} />
+                <X className="boutonFermer" width={30} height={30} onClick={fermeture} />
                 <div>{children}</div>
             </div>
         </div>
