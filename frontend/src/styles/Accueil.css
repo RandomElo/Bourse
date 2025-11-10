@@ -76,13 +76,6 @@
     }
     /* Gestion modal */
     #divAjouterAchat {
-        #pAjouterVente {
-            font-weight: bold;
-            color: #0085ff;
-            text-decoration: underline;
-            text-align: center;
-            cursor: pointer;
-        }
         #divChamps {
             width: 340px;
             margin: auto;
@@ -140,7 +133,7 @@
         }
         button {
             display: flex;
-            margin: 10px auto;
+            margin: 15px auto;
         }
     }
     #divSelectionPortefeuille {

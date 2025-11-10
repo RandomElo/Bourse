@@ -44,7 +44,7 @@ interface DonneesGraphique {
     premierTrade?: string;
 }
 
-export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille }: { idComposant?: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" } }) {
+export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille, cleRechargement }: { idComposant?: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" }; cleRechargement: number }) {
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
     const [typeDonneeModal, setTypeDonneeModal] = useState<string>();
 
@@ -77,6 +77,7 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
                 }
             } else {
                 const reponse = await requete({ url: `/portefeuille/recuperation-graphique-valorisation?id=${idComposant}&duree=${dureeGraphique}` });
+                console.log(reponse);
 
                 setChargement(false);
                 setRendement(Number((((reponse.tableauValorisation[reponse.tableauValorisation.length - 1].valeur - reponse.tableauValorisation[0].valeur) / reponse.tableauValorisation[0].valeur) * 100).toFixed(2)));
@@ -95,7 +96,7 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
             recuperationPortefeuille();
         }
         recuperationDonnees();
-    }, [idComposant, dureeGraphique]); // 👈 se lance au premier rendu et à chaque changement
+    }, [idComposant, dureeGraphique, cleRechargement]); // 👈 se lance au premier rendu et à chaque changement
 
     const gestionCliqueCreePortefeuille = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
         const base = e.currentTarget.parentNode?.parentNode;
@@ -212,7 +213,6 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
                                     Enregistrer
                                 </button>
                             </form>
-                            <p id="pAjouterVente">Ajouter une vente</p>
                         </div>
                     )}
 

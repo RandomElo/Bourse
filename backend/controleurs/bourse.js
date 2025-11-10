@@ -51,12 +51,38 @@ export const rechercheAction = gestionErreur(
             // Trie et enregistrement
             for (const action of resultat.quotes) {
                 if (!action.symbol || action.quoteType != "EQUITY") continue;
-                // Récupération pour une valeur témoin
+
+                // Récupération pour une valeur témoin (dernier mardi)
+
+                const aujourdHui = new Date();
+                const jour = aujourdHui.getDay();
+
+                // Calcul du décalage pour revenir au dernier mardi
+                const diff = ((jour + 6 - 2) % 7) + 1;
+                const dernierMardi = new Date(aujourdHui);
+                dernierMardi.setDate(aujourdHui.getDate() - diff);
+
                 const donnees = await finance.chart(action.symbol, {
-                    period1: "2025-11-07",
+                    period1: dernierMardi.toISOString().slice(0, 10),
                     interval: "1m",
                     return: "object",
                 });
+
+                // --- Verification action parasite
+                const quote = donnees.indicators.quote[0];
+                const volumes = quote.volume || [];
+                const closes = quote.close || [];
+
+                if (volumes.length === 0 || closes.length === 0) continue;
+
+                // Compter les volumes valides
+                const volumesValides = volumes.filter((v) => v && v > 0).length;
+                const pourcentageVolumeValide = (volumesValides / volumes.length) * 100;
+
+                // Si moins de 50 % des données sont valides, on ignore l'action
+                if (pourcentageVolumeValide < 50) continue;
+
+                // --- Fin verification action parasite
 
                 // Récupération de la date du premier trade
                 let premierTrade = donnees.meta.firstTradeDate ? new Date(donnees.meta.firstTradeDate).toISOString().split("T")[0] : null;

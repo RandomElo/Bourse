@@ -40,6 +40,7 @@ export default function MesPortefeuilles() {
         const recuperationDonnees = async () => {
             const reponse = await requete({ url: "/portefeuille/recuperation-portefeuilles-details" });
             setDonnees(reponse);
+            console.log(reponse);
         };
         recuperationDonnees();
     }, []);
@@ -64,8 +65,16 @@ export default function MesPortefeuilles() {
                         {donnees.map((portefeuille, index) => (
                             <tr key={portefeuille.id} className={ligneSurvolee == portefeuille.id ? "survolee" : ""}>
                                 <td className="celluleNom">{portefeuille.nom}</td>
-                                <td className="celluleGain">{portefeuille.valorisation !== "Calcul impossible" ? <RendementAction valeur={Number(portefeuille.gainAujourdhui)} valorisation={portefeuille.valorisation} mode="calcul" /> : <RendementAction valeur={Number(portefeuille.gainAujourdhui)} />}</td>
-                                <td className="celluleValorisation">{portefeuille.valorisation !== "Calcul impossible" ? `${portefeuille.valorisation} ${portefeuille.devise}` : portefeuille.valorisation}</td>
+                                {portefeuille.listeTransactions.length > 0 ? (
+                                    <>
+                                        <td className="celluleGain">{portefeuille.valorisation !== "Calcul impossible" ? <RendementAction valeur={Number(portefeuille.gainAujourdhui)} valorisation={portefeuille.valorisation} mode="calcul" /> : <RendementAction valeur={Number(portefeuille.gainAujourdhui)} />}</td>
+                                        <td className="celluleValorisation">{portefeuille.valorisation !== "Calcul impossible" ? `${portefeuille.valorisation} ${portefeuille.devise}` : portefeuille.valorisation}</td>
+                                    </>
+                                ) : (
+                                    <>
+                                        <td colSpan={2} className="celluleAucuneTransaction">Aucune transaction enregistrée.</td>
+                                    </>
+                                )}
                                 <td
                                     className="celluleLienDetail"
                                     onMouseEnter={() => setLigneSurvolee(portefeuille.id)}

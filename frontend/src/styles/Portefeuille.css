@@ -1,4 +1,8 @@
 .Portefeuille {
+    #pAucuneTransaction {
+        text-align: center;
+        margin-top: 10px;
+    }
     .CartePerformances {
         margin: 15px auto;
     }
@@ -66,6 +70,7 @@
             cursor: pointer;
         }
     }
+    /* Styles pour la modal */
     #divEnregistrerVente {
         form {
             width: 312px;
@@ -99,15 +104,27 @@
             }
         }
         #divBoutonEnregistrer {
-            margin-top: 15px;
+            margin-top: 15px; 
             button {
-                margin: auto;
+                margin: auto; 
                 display: flex;
                 align-items: center;
                 .chargement {
                     margin-right: 10px;
                 }
             }
+        }
+    }
+
+    #divProblemeSuppressionAchat {
+        h2 {
+            margin-bottom: 8px;
+        }
+        p {
+            line-height: 25px;
+        }
+        #p1 {
+            margin-bottom: 10px;
         }
     }
 }

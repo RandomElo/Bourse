@@ -11,7 +11,7 @@ const recuperationListePortefeuillesUtilisateur = async (req) => {
 // Fonction qui permet de récupérer transactions, etc dans les portefeuilles
 const recuperationsDetailsPortefeuille = async (req, idPortefeuille) => {
     const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-
+    const portefeuille = await req.Portefeuille.findByPk(idPortefeuille);
     const transactions = await req.Transaction.findAll({
         where: { idPortefeuille },
         attributes: { exclude: ["idPortefeuille"] },
@@ -53,9 +53,11 @@ const recuperationsDetailsPortefeuille = async (req, idPortefeuille) => {
     let valorisationHier = 0;
 
     for (const t of transactionsEnrichies) {
-        valorisationActuel += t.quantite * t.prixActuel;
-        valorisationDepart += t.quantite * t.prix;
-        valorisationHier += t.quantite * t.prixHier;
+        const signe = t.type === "vente" ? -1 : 1;
+
+        valorisationActuel += signe * t.quantite * t.prixActuel;
+        valorisationDepart += signe * t.quantite * t.prix;
+        valorisationHier += signe * t.quantite * t.prixHier;
     }
 
     const gainTotal = ((valorisationActuel - valorisationDepart) / valorisationDepart) * 100;
@@ -67,6 +69,7 @@ const recuperationsDetailsPortefeuille = async (req, idPortefeuille) => {
         gainAujourdhui: gainAujourdhui.toFixed(2),
         devise: devisePortefeuille,
         listeTransactions: transactionsEnrichies,
+        nom: portefeuille.nom,
     };
 };
 
@@ -222,6 +225,7 @@ export const recuperationGraphiqueValorisation = gestionErreur(
                 interval: "1d",
                 return: "object",
             });
+
             const timestamps = donneesGraphiques.timestamp;
             const fermetures = donneesGraphiques.indicators.quote[0].close;
 
@@ -232,20 +236,22 @@ export const recuperationGraphiqueValorisation = gestionErreur(
             });
             historiqueActions[idAction] = historique;
 
-            // Construction de la quantité détenue jour par jour
             const listeDatesCours = Object.keys(historique).sort();
             let quantite = 0;
             const quantParJour = {};
 
             for (const date of listeDatesCours) {
-                // Ajustement quantité si transaction ce jour
+                // Si une transaction a lieu ce jour
                 const transactionsDuJour = actionsMap[idAction].filter((t) => t.date === date);
-
                 for (const transaction of transactionsDuJour) {
                     quantite += transaction.type === "achat" ? transaction.quantite : -transaction.quantite;
                 }
+
+                // Même s'il n'y a pas de transaction, on conserve la dernière quantité connue
                 quantParJour[date] = quantite;
             }
+
+            // Propagation complète des quantités (pour dates sans transaction)
             quantitesCumul[idAction] = quantParJour;
         }
 
@@ -260,7 +266,6 @@ export const recuperationGraphiqueValorisation = gestionErreur(
             for (const idAction of Object.keys(historiqueActions)) {
                 const prix = historiqueActions[idAction][date];
                 const quant = quantitesCumul[idAction][date] || 0;
-
                 if (prix && quant > 0) somme += prix * quant;
             }
             const sommeFinale = Number(somme.toFixed(2));
@@ -294,6 +299,7 @@ export const recuperationGraphiqueValorisation = gestionErreur(
                 valorisationFinale = valorisationTotale;
                 break;
         }
+
         const premierValorisation = Number(valorisationTotale[0].valeur);
         const valorisationHier = Number(valorisationFinale[valorisationFinale.length - 2].valeur);
         const valorisationAujourdhui = Number(valorisationFinale[valorisationFinale.length - 1].valeur);
@@ -406,4 +412,23 @@ export const enregistrerVente = gestionErreur(
     },
     "controleurEnregistrerVente",
     "Erreur lors de l'enregistrement de la vente"
+);
+export const suppressionTransaction = gestionErreur(
+    async (req, res) => {
+        const { id } = req.body;
+        if (!id) {
+            throw new Error("Éléments de requête absent");
+        }
+
+        const transaction = await req.Transaction.findByPk(id);
+        const portefeuille = await req.Portefeuille.findByPk(transaction.idPortefeuille);
+        if (portefeuille.idUtilisateur !== req.idUtilisateur) {
+            throw new Error("Utilisateur non correspondant");
+        }
+        await req.Transaction.destroy({ where: { id } });
+
+        return res.json({ etat: true, detail: "dev" });
+    },
+    "controleursuppressionTransaction",
+    "Erreur lors de la suppression de la transaction"
 );

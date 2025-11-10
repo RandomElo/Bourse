@@ -1,5 +1,5 @@
 import e from "express";
-import { creation, enregistrerAchat, enregistrerVente, recuperationDetailsUnPortefeuille, recuperationGraphiqueValorisation, recupererListe, recupererListePortefeuilleEtTransaction, verificationAcces } from "../controleurs/portefeuille.js";
+import { creation, enregistrerAchat, enregistrerVente, recuperationDetailsUnPortefeuille, recuperationGraphiqueValorisation, recupererListe, recupererListePortefeuilleEtTransaction, suppressionTransaction, verificationAcces } from "../controleurs/portefeuille.js";
 import { autorisationAcces } from "../middlewares/autorisationAcces.js";
 
 const routeurPortefeuille = e.Router();
@@ -12,5 +12,5 @@ routeurPortefeuille.get("/verification-acces/:id", autorisationAcces, verificati
 routeurPortefeuille.get("/recuperation-details-un-portefeuille/:id", autorisationAcces, recuperationDetailsUnPortefeuille);
 routeurPortefeuille.get("/recuperation-graphique-valorisation", autorisationAcces, recuperationGraphiqueValorisation);
 routeurPortefeuille.post("/enregistrer-vente", autorisationAcces, enregistrerVente);
-
+routeurPortefeuille.delete("/suppression-transaction", autorisationAcces, suppressionTransaction);
 export default routeurPortefeuille;

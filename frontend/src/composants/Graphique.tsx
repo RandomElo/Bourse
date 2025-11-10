@@ -139,7 +139,7 @@ export default function Graphique({ donnees, donneesValorisation, duree, rendeme
 
     return (
         <div className="Graphique">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                     data={data}
                     onClick={(e) => {
