@@ -2,6 +2,19 @@
     #boutonSeConnecter {
         color: var(--text-blanc);
     }
+    #divInput {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 8px;
+        .input {
+            margin-top: 0;
+        }
+        .chargement {
+            width: 24px;
+            height: 27.5px;
+        }
+    }
     #divRechercheActions {
         display: flex;
         justify-content: center;
@@ -29,11 +42,6 @@
                 /* border: 1px solid var(--zebra-sombre); */
 
                 background-color: var(--zebra-sombre);
-            }
-
-            tr.ligneSelectionnee {
-                outline: 1px solid #fff; /* contour visible même avec border-collapse */
-                outline-offset: -1px; /* pour ne pas agrandir visuellement la ligne */
             }
 
             td {

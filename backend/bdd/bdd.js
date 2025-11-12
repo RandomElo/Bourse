@@ -5,6 +5,7 @@ import fs from "fs";
 import Action from "./modeles/Action.js";
 import Portefeuille from "./modeles/Portefeuille.js";
 import Transaction from "./modeles/Transaction.js";
+import Recherche from "./modeles/Recherche.js";
 
 const cheminBDD = "./bdd/bdd.sqlite";
 
@@ -24,6 +25,7 @@ const bdd = {
     Action: Action(sequelize),
     Portefeuille: Portefeuille(sequelize),
     Transaction: Transaction(sequelize),
+    Recherche: Recherche(sequelize),
 };
 
 // Définitions des relations

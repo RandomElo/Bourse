@@ -4,8 +4,9 @@ import { useRequete } from "../fonctions/requete";
 
 import "../styles/Accueil.css";
 import { NavLink } from "react-router-dom";
-import { CornerDownLeft } from "lucide-react";
+import { CornerDownLeft, Loader2, Search } from "lucide-react";
 import PresentationAction from "../composants/PresentationAction";
+import BarreDeRecherche from "../composants/BarreDeRecherche";
 
 export default function Accueil() {
     const requete = useRequete();
@@ -16,32 +17,13 @@ export default function Accueil() {
     const [indexSelectionner, setIndexSelectionner] = useState(-1);
     const [listeActions, setListeActions] = useState<[{ nom: string; ticker: string; place: string; rendementJourPourcentage: number; prix: string }] | []>([]);
     const [action, setAction] = useState<string | null>(null);
+    const [recuperationActions, setRecuperationActions] = useState<boolean>(false);
 
     useEffect(() => {
         document.title = "Accueil - Bourse";
     }, []);
 
     // Permet de détecter l'appui sur des touches
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "ArrowDown") {
-                setIndexSelectionner((prev) => Math.min(prev + 1, listeActions.length - 1));
-            } else if (e.key === "ArrowUp") {
-                setIndexSelectionner((prev) => Math.max(prev - 1, 0));
-            } else if (e.key === "Enter") {
-                if (listeActions[indexSelectionner]?.ticker) {
-                    setAction(listeActions[indexSelectionner].ticker);
-                    setListeActions([]);
-                }
-            } else if (e.key == "Escape") {
-                refInputRecherche.current?.focus();
-                setListeActions([]);
-                setAction(null);
-            }
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [listeActions, indexSelectionner, action]);
 
     const rechercheInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         setAction(null);
@@ -55,8 +37,12 @@ export default function Accueil() {
         debounceTimeout.current = setTimeout(async () => {
             if (value !== "") {
                 try {
+                    setRecuperationActions(true);
                     const reponse = await requete({ url: "/bourse/recherche-action/" + value });
                     setListeActions(reponse);
+                    setTimeout(() => {
+                        setRecuperationActions(false);
+                    }, 300);
                 } catch (err) {
                     console.error("Erreur recherche :", err);
                     setListeActions([]);
@@ -83,12 +69,18 @@ export default function Accueil() {
                     <h1 id="titre">Auth</h1>
 
                     <div id="divRechercheActions">
-                        <input type="text" className="input" placeholder="Rechercher une action" onChange={rechercheInput} ref={refInputRecherche} />
-                        {listeActions.length !== 0 && (
+                        <BarreDeRecherche onChange={rechercheInput} ref={refInputRecherche} chargement={recuperationActions} />
+                        {listeActions.length !== 0 && !action && (
                             <table id="tableauPresentationAction">
                                 <tbody>
                                     {listeActions.map((action, index) => (
-                                        <tr key={index} className={`${index % 2 === 0 ? "ligneClaire" : "ligneSombre"} ${index === indexSelectionner ? "ligneSelectionnee" : ""}`} onClick={() => setIndexSelectionner(index)}>
+                                        <tr
+                                            key={index}
+                                            className={`${index % 2 === 0 ? "ligneClaire" : "ligneSombre"}`}
+                                            onClick={() => {
+                                                setAction(listeActions[index].ticker);
+                                            }}
+                                        >
                                             <td className="tdPresentation">
                                                 <p className="nom">{action.nom}</p>
                                                 <p className="detail">
@@ -107,7 +99,7 @@ export default function Accueil() {
                                 </tbody>
                             </table>
                         )}
-                        {action && <PresentationAction idComposant={action} />}
+                        {action && <PresentationAction idComposant={action} setAction={setAction} />}
                     </div>
                 </>
             )}

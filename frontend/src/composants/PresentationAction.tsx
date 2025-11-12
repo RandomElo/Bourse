@@ -8,6 +8,7 @@ import ChampDonneesForm from "./ChampDonneesForm";
 import RendementAction from "./RendementAction";
 import Graphique from "./Graphique";
 import DureeGraphique from "./DureeGraphique";
+import { ArrowLeft } from "lucide-react";
 
 // Définition du typage
 // Type pour les transactions défini dans actions
@@ -44,7 +45,7 @@ interface DonneesGraphique {
     premierTrade?: string;
 }
 
-export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille, cleRechargement }: { idComposant?: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" }; cleRechargement: number }) {
+export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille, cleRechargement, setAction }: { idComposant?: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" }; cleRechargement: number; setAction: React.Dispatch<React.SetStateAction<string | null>> }) {
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
     const [typeDonneeModal, setTypeDonneeModal] = useState<string>();
 
@@ -115,6 +116,10 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
             <div className="PresentationAction">
                 {typePresentation == "action" && (
                     <>
+                        <div id="divRetourChampsRecherche" onClick={() => setAction(null)}>
+                            <ArrowLeft id="iconeRetourArriere" width={30} height={30} />
+                            <p>Retour à la recherche</p>
+                        </div>
                         <div id="divHeader">
                             <div id="divIdentifiantAction">
                                 <p id="pTicker">{idComposant}</p>

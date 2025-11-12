@@ -14,6 +14,7 @@ export default function (bdd) {
         ticker: {
             type: DataTypes.STRING(30),
             allowNull: false,
+            unique: true,
         },
         placeCotation: {
             type: DataTypes.STRING(30),

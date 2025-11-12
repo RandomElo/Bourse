@@ -1,7 +1,6 @@
 import YahooFinance from "yahoo-finance2";
 import { Op } from "sequelize";
 import gestionErreur from "../middlewares/gestionErreur.js";
-
 // Fonction qui permet de récupérer le prix des actions
 async function gestionValeursRecherche(tableauEntree) {
     const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
@@ -40,24 +39,65 @@ async function recupererHeureDebutHeureFin(donnees) {
 
 export const rechercheAction = gestionErreur(
     async (req, res) => {
-        // Vérification de la bdd
-        const resultatsBdd = await req.Action.findAll({ where: { nom: { [Op.like]: `%${req.params.valeur}%` } }, order: [["nom", "ASC"]], limit: 5 });
-        if (resultatsBdd.length == 5) {
-            return res.json({ etat: true, detail: await gestionValeursRecherche(resultatsBdd.map((action) => ({ nom: action.nom, ticker: action.ticker, place: action?.placeCotation }))) });
-        } else {
-            const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-            // Récupération de nouvelle valeur
-            const resultat = await finance.search(req.params.valeur);
-            // Trie et enregistrement
-            for (const action of resultat.quotes) {
-                if (!action.symbol || action.quoteType != "EQUITY") continue;
+        const { valeur } = req.params;
+        const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
-                // Récupération pour une valeur témoin (dernier mardi)
+        // --- Étape 1 : Vérification d'abord dans la BDD locale ---
+
+        const rechercheMotCle = await req.Recherche.findOne({ where: { motCle: valeur }, raw: true });
+        if (rechercheMotCle) {
+            const tableauActions = [];
+            for (const idAction of JSON.parse(rechercheMotCle.tableauIdActions)) {
+                const action = await req.Action.findByPk(idAction, { raw: true });
+                tableauActions.push(action);
+            }
+
+            return res.json({
+                etat: true,
+                detail: await gestionValeursRecherche(
+                    tableauActions.map((action) => ({
+                        nom: action.nom,
+                        ticker: action.ticker,
+                        place: action.placeCotation,
+                    }))
+                ),
+            });
+        } else {
+            // --- Fonctions de normalisation et de similarité ---
+            function normaliserTexte(texte) {
+                return texte
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[^a-zA-Z0-9 ]/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim()
+                    .toLowerCase();
+            }
+
+            function similariteTexte(a, b) {
+                if (!a || !b) return 0;
+                a = normaliserTexte(a);
+                b = normaliserTexte(b);
+
+                const getTrigrams = (s) => {
+                    const tri = new Set();
+                    for (let i = 0; i < s.length - 2; i++) tri.add(s.slice(i, i + 3));
+                    return tri;
+                };
+
+                const setA = getTrigrams(a);
+                const setB = getTrigrams(b);
+                const intersection = [...setA].filter((x) => setB.has(x));
+                return intersection.length / Math.max(setA.size, setB.size);
+            }
+
+            const resultat = await finance.search(valeur);
+            const actionsFiltrees = [];
+            for (const action of resultat.quotes) {
+                if (!action.symbol || action.quoteType !== "EQUITY") continue;
 
                 const aujourdHui = new Date();
                 const jour = aujourdHui.getDay();
-
-                // Calcul du décalage pour revenir au dernier mardi
                 const diff = ((jour + 6 - 2) % 7) + 1;
                 const dernierMardi = new Date(aujourdHui);
                 dernierMardi.setDate(aujourdHui.getDate() - diff);
@@ -68,38 +108,26 @@ export const rechercheAction = gestionErreur(
                     return: "object",
                 });
 
-                // --- Verification action parasite
-                const quote = donnees.indicators.quote[0];
-                const volumes = quote.volume || [];
-                const closes = quote.close || [];
+                // --- Suppression des actions parasites ---
+                const quote = donnees.indicators?.quote?.[0];
+                if (!quote) continue;
 
-                if (volumes.length === 0 || closes.length === 0) continue;
+                const volumes = quote.volume?.filter((v) => typeof v === "number" && v > 0) || [];
+                if (volumes.length < 10) continue;
 
-                // Compter les volumes valides
-                const volumesValides = volumes.filter((v) => v && v > 0).length;
-                const pourcentageVolumeValide = (volumesValides / volumes.length) * 100;
+                const sommeVolumes = volumes.reduce((acc, v) => acc + v, 0);
 
-                // Si moins de 50 % des données sont valides, on ignore l'action
-                if (pourcentageVolumeValide < 50) continue;
-
-                // --- Fin verification action parasite
-
-                // Récupération de la date du premier trade
-                let premierTrade = donnees.meta.firstTradeDate ? new Date(donnees.meta.firstTradeDate).toISOString().split("T")[0] : null;
-
-                // Récupération des dates d'ouverture et de fermeture
                 let ouverture = "";
                 let fermeture = "";
-
                 if (donnees.indicators.quote[0] != null) {
                     const reponse = await recupererHeureDebutHeureFin(donnees);
                     ouverture = reponse.ouverture;
                     fermeture = reponse.fermeture;
                 }
 
-                // Construction d'un tableau avec date et valeur
+                const premierTrade = donnees.meta.firstTradeDate ? new Date(donnees.meta.firstTradeDate).toISOString().split("T")[0] : null;
 
-                await req.Action.upsert({
+                actionsFiltrees.push({
                     nom: action.longname || action.shortname,
                     ticker: action.symbol,
                     placeCotation: action.exchDisp,
@@ -109,12 +137,50 @@ export const rechercheAction = gestionErreur(
                     fermeture,
                     devise: donnees.meta.currency,
                     premierTrade,
+                    volume: sommeVolumes,
                 });
             }
 
-            const resultatsBdd = await req.Action.findAll({ where: { nom: { [Op.like]: `%${req.params.valeur}%` } }, order: [["nom", "ASC"]], limit: 5 });
+            // --- Détection et suppression des doublons ---
+            actionsFiltrees.sort((a, b) => b.volume - a.volume);
+            const actionsNettoyees = [];
+            for (const action of actionsFiltrees) {
+                const dejaPresente = actionsNettoyees.some((a) => similariteTexte(a.nom, action.nom) > 0.75);
+                if (!dejaPresente) actionsNettoyees.push(action);
+            }
 
-            return res.json({ etat: true, detail: await gestionValeursRecherche(resultatsBdd.map((action) => ({ nom: action.nom, ticker: action.ticker, place: action?.placeCotation }))) });
+            // --- Insertion en BDD ---
+            for (const action of actionsNettoyees) {
+                await req.Action.upsert({
+                    nom: action.nom,
+                    ticker: action.ticker,
+                    placeCotation: action.placeCotation,
+                    secteur: action.secteur,
+                    industrie: action.industrie,
+                    ouverture: action.ouverture,
+                    fermeture: action.fermeture,
+                    devise: action.devise,
+                    premierTrade: action.premierTrade,
+                });
+            }
+
+            res.json({
+                etat: true,
+                detail: await gestionValeursRecherche(
+                    actionsNettoyees.map((action) => ({
+                        nom: action.nom,
+                        ticker: action.ticker,
+                        place: action.placeCotation,
+                    }))
+                ),
+            });
+            const tableauIdActions = [];
+            // --- Insertion en BDD ---
+            for (const action of actionsNettoyees) {
+                const { id } = await req.Action.findOne({ where: { nom: action.nom }, raw: true });
+                tableauIdActions.push(id);
+            }
+            await req.Recherche.create({ motCle: valeur, tableauIdActions });
         }
     },
     "controleurRechercheValeur",

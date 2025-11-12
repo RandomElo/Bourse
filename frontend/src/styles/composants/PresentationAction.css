@@ -2,7 +2,26 @@
     /* border: 1px solid black; */
     width: 1000px;
     margin: 40px auto 0 auto;
+    #divRetourChampsRecherche {
+        width: 189px;
 
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+
+        margin-left: -15px;
+        margin-bottom: 10px;
+        padding: 5px 10px;
+
+        border-radius: 15px;
+
+        p {
+            margin-left: 5px;
+        }
+    }
+    #divRetourChampsRecherche:hover {
+        background-color: #f7f8f8;
+    }
     #divHeader {
         display: flex;
         justify-content: space-between;
@@ -29,6 +48,4 @@
             margin-left: 10px;
         }
     }
-
-
 }
