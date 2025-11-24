@@ -5,10 +5,7 @@
     min-height: 0;
     display: block;
     .tooltipBasique {
-        /* 1 j : 95 */
-        /* 5j : 110 */
-        /* 1m : petit */
-        /* width: 110px; */
+        width: 90px;
         padding: 8px;
         background-color: rgb(44, 47, 51);
         color: white;
@@ -19,7 +16,7 @@
             font-weight: bold;
         }
     }
-    .duree1j,
+    /* .duree1j,
     .duree1m {
         width: 50px;
     }
@@ -31,8 +28,13 @@
     .duree5a,
     .dureeMAX {
         width: 90px;
+    } */
+    .duree1a,
+    .duree5a,
+    .dureeMAX {
+        width: 90px;
     }
-    
+
     .tooltipDifference {
         width: 183px;
         padding: 8px;

@@ -73,14 +73,36 @@ const recuperationsDetailsPortefeuille = async (req, idPortefeuille) => {
     };
 };
 
+const recuperationDetailsProtefeuilleTransaction = async (req) => {
+    let portefeuilles = await req.Portefeuille.findAll({
+        where: { idUtilisateur: req.idUtilisateur },
+        raw: true,
+        attributes: { exclude: ["idUtilisateur"] },
+    });
+
+    const details = await Promise.all(portefeuilles.map((portefeuille) => recuperationsDetailsPortefeuille(req, portefeuille.id)));
+
+    portefeuilles = portefeuilles.map((p, i) => ({
+        ...p,
+        ...details[i],
+    }));
+
+    return portefeuilles;
+};
+
 // Permet de crée un portefeuille
 export const creation = gestionErreur(
     async (req, res) => {
-        await req.Portefeuille.create({ nom: req.body.nom, idUtilisateur: req.idUtilisateur });
+        const { nom, type } = req.body;
+        await req.Portefeuille.create({ nom, idUtilisateur: req.idUtilisateur });
 
         const liste = await recuperationListePortefeuillesUtilisateur(req);
 
-        return res.json({ etat: true, detail: liste });
+        if (type == "achat") {
+            return res.json({ etat: true, detail: liste });
+        } else {
+            return res.json({ etat: true, detail: await recuperationDetailsProtefeuilleTransaction(req) });
+        }
     },
     "controleurCreationPortefeuille",
     "Erreur lors de l'enregistrement du portefeuille"
@@ -129,20 +151,7 @@ export const enregistrerAchat = gestionErreur(
 
 export const recupererListePortefeuilleEtTransaction = gestionErreur(
     async (req, res) => {
-        let portefeuilles = await req.Portefeuille.findAll({
-            where: { idUtilisateur: req.idUtilisateur },
-            raw: true,
-            attributes: { exclude: ["idUtilisateur"] },
-        });
-
-        const details = await Promise.all(portefeuilles.map((portefeuille) => recuperationsDetailsPortefeuille(req, portefeuille.id)));
-
-        portefeuilles = portefeuilles.map((p, i) => ({
-            ...p,
-            ...details[i],
-        }));
-
-        return res.json({ etat: true, detail: portefeuilles });
+        return res.json({ etat: true, detail: await recuperationDetailsProtefeuilleTransaction(req) });
     },
     "controleurRecuperationListePortefeuilleEtTransaction",
     "Erreur lors de la récupération détaillée des portefeuilles et de leur contenu"

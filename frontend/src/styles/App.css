@@ -137,6 +137,96 @@ h1#titre {
     }
 }
 
+/* Modal */
+#divAjouterAchat {
+    #divChamps {
+        width: 340px;
+        margin: auto;
+        .ChampDonneesForm {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+        }
+        #divinputNbrAction label {
+            text-align: right;
+        }
+        #divinputPrixAction label {
+            text-align: right;
+        }
+        #divinputDateAchat {
+            justify-content: space-between;
+            label {
+                width: 158px;
+                text-align: right;
+            }
+            input {
+                width: 159px;
+            }
+        }
+        #divSelectionPortefeuille {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            a {
+                color: #0085ff;
+                font-weight: bold;
+                text-decoration: underline;
+                cursor: pointer;
+            }
+        }
+        #pAucunPortefeuille {
+            text-align: center;
+            font-size: 0.9em;
+
+            a {
+                color: #0085ff;
+                font-weight: bold;
+                text-decoration: underline;
+                cursor: pointer;
+            }
+        }
+    }
+    #pErreurForm {
+        text-align: center;
+        font-size: 0.9em;
+        color: red;
+        font-weight: bold;
+    }
+    button {
+        display: flex;
+        margin: 15px auto;
+    }
+}
+
+#divCreationPortefeuille {
+    form {
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 10px;
+        width: 224px;
+        #champNom {
+            margin-bottom: 14px;
+            input {
+                text-align: left;
+            }
+        }
+        .ChampDonneesForm {
+            display: block;
+            width: 224px;
+        }
+        #boutonCreePortefeuille {
+            width: 100%;
+            text-align: center;
+        }
+        #pErreur {
+            margin-bottom: 14px;
+            text-align: center;
+        }
+    }
+}
+
 .chargement {
     width: 18px;
     height: 18px;

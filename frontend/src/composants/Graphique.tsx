@@ -43,7 +43,7 @@ const formatDate = (date: Date, format: "moisAnnee" | "dateMois" | "dateMoisAnne
     }
 };
 
-export default function Graphique({ donnees, donneesValorisation, duree, rendement }: { donnees?: DonneesGraphique; donneesValorisation?: Array<{ date: string; valeur: number }>; duree: DureeGraphique; rendement: number }) {
+export default function Graphique({ donnees, donneesValorisation, duree, rendement, valorisation, devise }: { donnees?: DonneesGraphique; donneesValorisation?: Array<{ date: string; valeur: number }>; duree: DureeGraphique; rendement: number; valorisation?: number | "Calcul impossible" | null; devise?: string | null }) {
     const [data, setData] = useState<Quote[]>([]);
     const [indiceFixe, setIndiceFixe] = useState<string | null>(null);
     const [indiceSurvol, setIndiceSurvol] = useState<string | null>(null);
@@ -104,16 +104,22 @@ export default function Graphique({ donnees, donneesValorisation, duree, rendeme
                 );
             return (
                 <div className="tooltipDifference">
-                    <p className={Number(difference.delta) > 0 ? "positif" : "negatif"}>
-                        {Number(difference.delta) > 0 ? "+" : "-"} {Math.abs(Number(difference.delta))} USD ({difference.pourcentage}%)
-                    </p>
+                    {valorisation != "Calcul impossible" && (
+                        <p className={Number(difference.delta) > 0 ? "positif" : "negatif"}>
+                            {Number(difference.delta) > 0 ? "+" : "-"} {Math.abs(Number(difference.delta))} {devise || donnees?.devise} ({difference.pourcentage}%)
+                        </p>
+                    )}
                     {date}
                 </div>
             );
         } else {
             return (
-                <div className={"tooltipBasique duree" + duree.replace(" ", "")}>
-                    <p id="prix">${data.close.toFixed(2)}</p>
+                <div className={`tooltipBasique duree${duree.replace(" ", "")}`}>
+                    {valorisation !== "Calcul impossible" && (
+                        <p id="prix">
+                            {data.close.toFixed(2)} {donnees?.devise || devise}
+                        </p>
+                    )}
 
                     {label && duree == "1 j" && <p id="date">{formatDate(new Date(label), "heure")}</p>}
                     {label && duree == "5 j" && <p id="date">{formatDate(new Date(label), "dateMoisHeure")}</p>}
@@ -173,7 +179,7 @@ export default function Graphique({ donnees, donneesValorisation, duree, rendeme
                     />
                     <YAxis domain={["auto", "auto"]} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Line type="monotone" dataKey="close" stroke={rendement > 0 ? "#137333" : "#a50e0e"} dot={false} strokeWidth={2} />
+                    <Line type="monotone" dataKey="close" stroke={rendement > 0 ? "#137333" : "#a50e0e"} dot={false} strokeWidth={2} isAnimationActive={false} />
 
                     {indiceFixe && (
                         <ReferenceLine

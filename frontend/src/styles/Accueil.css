@@ -2,26 +2,26 @@
     #boutonSeConnecter {
         color: var(--text-blanc);
     }
-    #divInput {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-top: 8px;
-        .input {
-            margin-top: 0;
-        }
-        .chargement {
-            width: 24px;
-            height: 27.5px;
-        }
-    }
+
     #divRechercheActions {
         display: flex;
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        input {
-            text-align: center;
+
+        #divInput {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 8px;
+            .input {
+                margin-top: 0;
+                text-align: center;
+            }
+            .chargement {
+                width: 24px;
+                height: 27.5px;
+            }
         }
         #tableauPresentationAction {
             width: 650px;
@@ -31,19 +31,14 @@
             tr {
                 height: 65px;
                 cursor: pointer;
+                border-bottom: 1px solid var(--text-color);
             }
-
-            tr.ligneClaire {
-                /* border: 1px solid var(--zebra-claire); */
+            tr:last-child {
+                border-bottom: none;
+            }
+            .ligneSelectionnee {
                 background-color: var(--zebra-claire);
             }
-
-            tr.ligneSombre {
-                /* border: 1px solid var(--zebra-sombre); */
-
-                background-color: var(--zebra-sombre);
-            }
-
             td {
                 padding-top: 12px;
                 padding-bottom: 12px;
@@ -76,74 +71,13 @@
                     color: red;
                 }
             }
-            .tdIcone {
-                width: 24px;
-                padding-right: 4px;
-            }
+        }
+        #pAucuneAction {
+            margin-top: 10px;
         }
     }
     /* Gestion modal */
-    #divAjouterAchat {
-        #divChamps {
-            width: 340px;
-            margin: auto;
-            .ChampDonneesForm {
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                width: 100%;
-                gap: 10px;
-            }
-            #divinputNbrAction label {
-                text-align: right;
-            }
-            #divinputPrixAction label {
-                text-align: right;
-            }
-            #divinputDateAchat {
-                justify-content: space-between;
-                label {
-                    width: 158px;
-                    text-align: right;
-                }
-                input {
-                    width: 159px;
-                }
-            }
-            #divSelectionPortefeuille {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                a {
-                    color: #0085ff;
-                    font-weight: bold;
-                    text-decoration: underline;
-                    cursor: pointer;
-                }
-            }
-            #pAucunPortefeuille {
-                text-align: center;
-                font-size: 0.9em;
 
-                a {
-                    color: #0085ff;
-                    font-weight: bold;
-                    text-decoration: underline;
-                    cursor: pointer;
-                }
-            }
-        }
-        #pErreurForm {
-            text-align: center;
-            font-size: 0.9em;
-            color: red;
-            font-weight: bold;
-        }
-        button {
-            display: flex;
-            margin: 15px auto;
-        }
-    }
     #divSelectionPortefeuille {
         text-align: center;
         #divContenu {
@@ -171,29 +105,5 @@
             }
         }
     }
-    #divCreationPortefeuille {
-        form {
-            margin-left: auto;
-            margin-right: auto;
-            margin-top: 10px;
-            width: 247px;
-            #champNom {
-                margin-bottom: 14px;
-                input {
-                    text-align: left;
-                }
-            }
-            .ChampDonneesForm {
-                display: block;
-            }
-            #boutonCreePortefeuille {
-                width: 100%;
-                text-align: center;
-            }
-            #pErreur {
-                margin-bottom: 14px;
-                text-align: center;
-            }
-        }
-    }
+
 }

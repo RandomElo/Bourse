@@ -1,6 +1,7 @@
 import YahooFinance from "yahoo-finance2";
 import { Op } from "sequelize";
 import gestionErreur from "../middlewares/gestionErreur.js";
+import { raw } from "express";
 // Fonction qui permet de récupérer le prix des actions
 async function gestionValeursRecherche(tableauEntree) {
     const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
@@ -93,6 +94,7 @@ export const rechercheAction = gestionErreur(
 
             const resultat = await finance.search(valeur);
             const actionsFiltrees = [];
+
             for (const action of resultat.quotes) {
                 if (!action.symbol || action.quoteType !== "EQUITY") continue;
 
@@ -102,11 +104,16 @@ export const rechercheAction = gestionErreur(
                 const dernierMardi = new Date(aujourdHui);
                 dernierMardi.setDate(aujourdHui.getDate() - diff);
 
-                const donnees = await finance.chart(action.symbol, {
-                    period1: dernierMardi.toISOString().slice(0, 10),
-                    interval: "1m",
-                    return: "object",
-                });
+                let donnees;
+                try {
+                    donnees = await finance.chart(action.symbol, {
+                        period1: dernierMardi.toISOString().slice(0, 10),
+                        interval: "1m",
+                        return: "object",
+                    });
+                } catch (erreur) {
+                    continue;
+                }
 
                 // --- Suppression des actions parasites ---
                 const quote = donnees.indicators?.quote?.[0];
@@ -274,4 +281,18 @@ export const graphique = gestionErreur(
     },
     "controleurInformationsAction",
     "Erreur lors de la récupération d'information sur l'action"
+);
+export const recuperationPremierTrade = gestionErreur(
+    async (req, res) => {
+        const { ticker } = req.query;
+
+        if (!ticker) {
+            throw new Error("Absence id action");
+        }
+        const action = await req.Action.findOne({ where: { ticker }, raw: true });
+
+        return res.json({ etat: true, detail: action.premierTrade });
+    },
+    "controleurRecuperationPremierTrade",
+    "Erreur lors de la récuépration du premier jour de cotation"
 );

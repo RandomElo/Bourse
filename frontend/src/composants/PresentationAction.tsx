@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRequete } from "../fonctions/requete";
 
 import "../styles/composants/PresentationAction.css";
@@ -9,6 +9,8 @@ import RendementAction from "./RendementAction";
 import Graphique from "./Graphique";
 import DureeGraphique from "./DureeGraphique";
 import { ArrowLeft } from "lucide-react";
+import AjouterAchat from "./AjouterAchat";
+import CreationPortefeuille from "./CreationPortefeuille";
 
 // Définition du typage
 // Type pour les transactions défini dans actions
@@ -45,17 +47,18 @@ interface DonneesGraphique {
     premierTrade?: string;
 }
 
-export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille, cleRechargement, setAction }: { idComposant?: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" }; cleRechargement: number; setAction: React.Dispatch<React.SetStateAction<string | null>> }) {
+export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille, cleRechargement, setAction }: { idComposant: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" }; cleRechargement: number; setAction: React.Dispatch<React.SetStateAction<string | null>> }) {
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
-    const [typeDonneeModal, setTypeDonneeModal] = useState<string>();
+    const [typeDonneeModal, setTypeDonneeModal] = useState<"creationPortefeuille" | "achatAction" | null>(null);
 
     const [message, setMessage] = useState<string | null>(null);
     const [dureeGraphique, setDureeGraphique] = useState<DureeGraphique>(typePresentation == "action" ? "1 j" : "1 m");
     const [donnees, setDonnees] = useState<DonneesGraphique>();
     const [chargement, setChargement] = useState<boolean>(true);
-    const [listePortefeuille, setListePortefeuille] = useState<Array<{ id: number; nom: string }> | null>();
+    const [listePortefeuille, setListePortefeuille] = useState<Array<{ id: number; nom: string }> | null>(null);
     const [erreurFormModal, setErreurFormModal] = useState<string | null>(null);
     const [donneeeFormCreationPortefeuille, setDonneeFormCreationPortefeuille] = useState<{ prix?: string; nombre?: string; date?: string }>({});
+    const [valorisationActuelle, setValorisationActuelle] = useState<null | number>(null);
     const [rendement, setRendement] = useState<number>(0);
     const requete = useRequete();
 
@@ -73,6 +76,9 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
                     setMessage(reponse.message);
                     setDonnees(reponse.donnees);
                 } else {
+                    if (!valorisationActuelle) {
+                        setValorisationActuelle(reponse.dernierPrix);
+                    }
                     setDonnees(reponse);
                     setRendement(reponse.rendement);
                 }
@@ -82,7 +88,6 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
 
                 setChargement(false);
                 setRendement(Number((((reponse.tableauValorisation[reponse.tableauValorisation.length - 1].valeur - reponse.tableauValorisation[0].valeur) / reponse.tableauValorisation[0].valeur) * 100).toFixed(2)));
-
                 setDonnees(reponse.tableauValorisation);
             }
         };
@@ -98,16 +103,6 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
         }
         recuperationDonnees();
     }, [idComposant, dureeGraphique, cleRechargement]); // 👈 se lance au premier rendu et à chaque changement
-
-    const gestionCliqueCreePortefeuille = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-        const base = e.currentTarget.parentNode?.parentNode;
-        const nbrAction = base?.querySelector<HTMLInputElement>("#inputNbrAction")?.value;
-        const prixAction = base?.querySelector<HTMLInputElement>("#inputPrixAction")?.value;
-        const dateAchat = base?.querySelector<HTMLInputElement>("#inputDateAchat")?.value;
-
-        setDonneeFormCreationPortefeuille({ nombre: nbrAction, prix: prixAction, date: dateAchat });
-        setTypeDonneeModal("creationPortefeuille");
-    };
 
     return chargement ? (
         <Chargement />
@@ -148,7 +143,7 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
                     donnees.dernierPrix && (
                         <div id="divPrix">
                             <p id="pPrixAction">
-                                {donnees.dernierPrix} {donnees.devise}
+                                {valorisationActuelle} {donnees.devise}
                             </p>
                             <RendementAction valeur={rendement} mode={"defini"} id="pRendementAction" />
                         </div>
@@ -162,96 +157,13 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
 
                 {typePresentation == "action" ? <DureeGraphique set={setDureeGraphique} dureeGraphique={dureeGraphique} /> : <DureeGraphique set={setDureeGraphique} dureeGraphique={dureeGraphique} tableauDurees={["5 j", "1 m", "6 m", "1 a", "5 a", "MAX"]} />}
 
-                {message ? <p id="pMessage">{message}</p> : <div id="divGraphique">{donnees ? typePresentation == "action" ? <Graphique donnees={donnees} duree={dureeGraphique} rendement={rendement} /> : <Graphique donneesValorisation={donnees} duree={dureeGraphique} rendement={rendement} /> : ""}</div>}
+                {message ? <p id="pMessage">{message}</p> : <div id="divGraphique">{donnees ? typePresentation == "action" ? <Graphique donnees={donnees} duree={dureeGraphique} rendement={rendement} /> : <Graphique donneesValorisation={donnees} duree={dureeGraphique} rendement={rendement} valorisation={donneesPortefeuille.valorisation} devise={donneesPortefeuille.devise} /> : ""}</div>}
             </div>
             {typePresentation == "action" && (
                 <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)}>
-                    {typeDonneeModal == "achatAction" && (
-                        <div id="divAjouterAchat">
-                            <h2>Ajouter un achat</h2>
-                            <form
-                                onSubmit={async (e) => {
-                                    e.preventDefault();
-                                    const nbrAction = e.currentTarget.querySelector<HTMLInputElement>("#inputNbrAction")?.value;
-                                    const prixAction = e.currentTarget.querySelector<HTMLInputElement>("#inputPrixAction")?.value;
-                                    const selectPortefeuille = e.currentTarget.querySelector<HTMLInputElement>("#selectNomPortefeuille")?.value;
-                                    const dateAchat = e.currentTarget.querySelector<HTMLInputElement>("#inputDateAchat")?.value;
+                    {typeDonneeModal == "achatAction" && <AjouterAchat setAfficherModal={setAfficherModal} setTypeDonneeModal={setTypeDonneeModal} listePortefeuille={listePortefeuille} idAction={idComposant} premierTrade={donnees?.premierTrade} typeAchat="action" />}
 
-                                    const corps = { ticker: idComposant, idPortefeuille: selectPortefeuille, nombre: nbrAction, prix: prixAction, date: dateAchat };
-
-                                    const reponse = await requete({ url: "/portefeuille/enregistrer-achat", methode: "POST", corps });
-                                    if (reponse.erreur) {
-                                        setErreurFormModal(reponse.erreur);
-                                    } else {
-                                        setAfficherModal(false);
-                                    }
-                                }}
-                            >
-                                <div id="divChamps">
-                                    <ChampDonneesForm label="Nombre d'action :" typeInput="number" id="inputNbrAction" value={donneeeFormCreationPortefeuille?.nombre} />
-                                    <ChampDonneesForm label="Prix :" typeInput="number" id="inputPrixAction" value={donneeeFormCreationPortefeuille?.prix} pas={0.01} />
-                                    <ChampDonneesForm label="Date d'achat :" typeInput="date" id="inputDateAchat" min={donnees?.premierTrade} value={donneeeFormCreationPortefeuille?.date} />
-                                    {listePortefeuille && listePortefeuille.length > 0 ? (
-                                        <div id="divSelectionPortefeuille">
-                                            <select id="selectNomPortefeuille" defaultValue="" required>
-                                                <option value="" disabled>
-                                                    -- Séléctionner un portefeuille --
-                                                </option>
-                                                {listePortefeuille?.map((portefeuille, index) => (
-                                                    <option key={index} value={portefeuille.id}>
-                                                        {portefeuille.nom}
-                                                    </option>
-                                                ))}
-                                                alstom
-                                            </select>
-                                            <p>ou</p>
-                                            <a onClick={(e) => gestionCliqueCreePortefeuille(e)}>En crée un</a>
-                                        </div>
-                                    ) : (
-                                        <p id="pAucunPortefeuille">
-                                            Vous n'avez pas de portefeuille - <a onClick={(e) => gestionCliqueCreePortefeuille(e)}>En crée un</a>
-                                        </p>
-                                    )}
-                                </div>
-                                {erreurFormModal && <p id="pErreurForm">{erreurFormModal}</p>}
-                                <button type="submit" className="bouton">
-                                    Enregistrer
-                                </button>
-                            </form>
-                        </div>
-                    )}
-
-                    {typeDonneeModal == "creationPortefeuille" && (
-                        <div id="divCreationPortefeuille">
-                            <h2>Création de portefeuille</h2>
-                            <form
-                                onSubmit={async (e) => {
-                                    e.preventDefault();
-                                    const valeur = document.querySelector<HTMLInputElement>("#champNom")!.value;
-                                    const reponse = await requete({ url: "/portefeuille/creation", methode: "POST", corps: { nom: valeur } });
-
-                                    setListePortefeuille(reponse);
-                                    setTypeDonneeModal("achatAction");
-                                }}
-                            >
-                                <ChampDonneesForm
-                                    id="champNom"
-                                    label="Nom : "
-                                    onBlur={(e) => {
-                                        if (e.target.value.length > 30) {
-                                            setErreurFormModal("Taille max : 30 caractères.");
-                                        } else {
-                                            setErreurFormModal(null);
-                                        }
-                                    }}
-                                />
-                                {erreurFormModal && <p id="pErreur">{erreurFormModal}</p>}
-                                <button type="submit" id="boutonCreePortefeuille" className="bouton" disabled={!!erreurFormModal}>
-                                    Crée
-                                </button>
-                            </form>
-                        </div>
-                    )}
+                    {typeDonneeModal == "creationPortefeuille" && <CreationPortefeuille type="achat" setListePortefeuille={setListePortefeuille} setTypeDonneeModal={setTypeDonneeModal} />}
                 </Modal>
             )}
         </>

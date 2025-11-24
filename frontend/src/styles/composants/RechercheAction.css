@@ -1,0 +1,73 @@
+#divRechercheAction {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    #divInput {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 8px;
+        .input {
+            margin-top: 0;
+            text-align: center;
+        }
+        .chargement {
+            width: 24px;
+            height: 27.5px;
+        }
+    }
+    #tableauPresentationAction {
+        width: 650px;
+        margin-top: 8px;
+        border-collapse: collapse;
+
+        tr {
+            height: 65px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--text-color);
+        }
+        tr:last-child {
+            border-bottom: none;
+        }
+        .ligneSelectionnee {
+            background-color: var(--zebra-claire);
+        }
+        td {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            vertical-align: middle;
+        }
+
+        .tdPresentation {
+            display: flex;
+            flex-direction: column;
+            padding-left: 28px;
+
+            .nom {
+                font-weight: bold;
+            }
+            .detail {
+                font-size: 0.8em;
+                margin-top: 2px;
+            }
+        }
+        .tdChiffres {
+            width: 90px;
+            .rendement {
+                font-weight: bold;
+                margin-top: 2px;
+            }
+            .positif {
+                color: green;
+            }
+            .negatif {
+                color: red;
+            }
+        }
+    }
+    #pAucuneAction {
+        margin-top: 10px;
+    }
+}

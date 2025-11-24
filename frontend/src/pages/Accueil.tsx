@@ -4,21 +4,19 @@ import { useRequete } from "../fonctions/requete";
 
 import "../styles/Accueil.css";
 import { NavLink } from "react-router-dom";
-import { CornerDownLeft, Loader2, Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import PresentationAction from "../composants/PresentationAction";
-import BarreDeRecherche from "../composants/BarreDeRecherche";
 
 export default function Accueil() {
     const requete = useRequete();
     const { estAuth } = useAuth();
     const debounceTimeout = useRef<number | null>(null);
-    const refInputRecherche = useRef<HTMLInputElement | null>(null);
 
     const [indexSelectionner, setIndexSelectionner] = useState(-1);
     const [listeActions, setListeActions] = useState<[{ nom: string; ticker: string; place: string; rendementJourPourcentage: number; prix: string }] | []>([]);
     const [action, setAction] = useState<string | null>(null);
     const [recuperationActions, setRecuperationActions] = useState<boolean>(false);
-
+    const [valeurRecherche, setValeurRecherche] = useState<string>("");
     useEffect(() => {
         document.title = "Accueil - Bourse";
     }, []);
@@ -53,6 +51,37 @@ export default function Accueil() {
         }, 500); // délai de 500ms
     };
 
+
+    useEffect(() => {
+        const gestionToucheNavigation = (e: KeyboardEvent) => {
+            if (valeurRecherche !== "") {
+                switch (e.key) {
+                    case "ArrowUp":
+                        // e.preventDefault();
+                        setIndexSelectionner((prev) => Math.max(prev - 1, 0));
+                        break;
+                    case "ArrowDown":
+                        // e.preventDefault();
+                        setIndexSelectionner((prev) => Math.min(prev + 1, listeActions.length - 1));
+                        break;
+                    case "Enter":
+                        e.preventDefault();
+                        if (indexSelectionner !== -1) setAction(listeActions[indexSelectionner].ticker);
+                        break;
+                    case "ArrowLeft":
+                        if (action) {
+                            setAction(null);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        };
+        window.addEventListener("keydown", gestionToucheNavigation);
+        return () => window.removeEventListener("keydown", gestionToucheNavigation);
+    }, [listeActions, indexSelectionner, action, valeurRecherche]);
+
     return (
         <main className="Accueil">
             {!estAuth ? (
@@ -69,14 +98,27 @@ export default function Accueil() {
                     <h1 id="titre">Auth</h1>
 
                     <div id="divRechercheActions">
-                        <BarreDeRecherche onChange={rechercheInput} ref={refInputRecherche} chargement={recuperationActions} />
-                        {listeActions.length !== 0 && !action && (
+                        <div id="divInput">
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Rechercher une action"
+                                value={valeurRecherche}
+                                onChange={(e) => {
+                                    setValeurRecherche(e.target.value);
+                                    rechercheInput(e);
+                                }}
+                            />
+                            <div id="divLoader">{recuperationActions ? <Loader2 className="chargement" /> : <Search />}</div>
+                        </div>
+
+                        {!action && listeActions.length > 0 ? (
                             <table id="tableauPresentationAction">
                                 <tbody>
                                     {listeActions.map((action, index) => (
                                         <tr
                                             key={index}
-                                            className={`${index % 2 === 0 ? "ligneClaire" : "ligneSombre"}`}
+                                            className={`${index === indexSelectionner ? "ligneSelectionnee" : ""}`}
                                             onClick={() => {
                                                 setAction(listeActions[index].ticker);
                                             }}
@@ -92,13 +134,14 @@ export default function Accueil() {
                                                 <p className="prix">{action.prix}</p>
                                                 <p className={`rendement ${action.rendementJourPourcentage > 0 ? "positif" : "negatif"}`}>{`${action.rendementJourPourcentage > 0 ? "+ " : "- "}${Math.abs(action.rendementJourPourcentage)} %`}</p>
                                             </td>
-
-                                            <td className="tdIcone">{index === indexSelectionner && <CornerDownLeft />}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                        ) : (
+                            valeurRecherche !== "" && !recuperationActions && !action && <p id="pAucuneAction">Aucune valeur trouvée. Essayer de chercher la valeur avec son ticker.</p>
                         )}
+
                         {action && <PresentationAction idComposant={action} setAction={setAction} />}
                     </div>
                 </>

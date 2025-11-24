@@ -10,6 +10,8 @@ import PresentationAction from "../composants/PresentationAction";
 import Chargement from "../composants/Chargement";
 import Modal from "../composants/Modal";
 import ChampDonneesForm from "../composants/ChampDonneesForm";
+import RechercheAction from "../composants/RechercheAction";
+import AjouterAchat from "../composants/AjouterAchat";
 
 // Type pour les transactions - reçu dans donner et trier apres pour remoduler les actions
 interface Transactions {
@@ -95,15 +97,18 @@ export default function Portefeuille() {
     const [idLigneTransactionAchatSurvolee, setIdLigneTransactionAchatSurvolee] = useState<number>(-1);
     const [attenteSuppression, setAttenteSuppression] = useState<boolean>(false);
 
-    const [typeModal, setTypeModal] = useState<"ajouterVente" | "problemeSuppressionAchat" | null>(null);
+    // const [typeModal, setTypeModal] = useState<"ajouterVente" | "problemeSuppressionAchat" | "ajouterAchat" | null>(null);
+    const [typeModal, setTypeModal] = useState<string | null>(null);
+    const [action, setAction] = useState<string | null>(null);
 
     const [valeurCle, setValeurCle] = useState<number>(0);
+    const [premierTrade, setPremierTrade] = useState<string | null>(null);
+    const [requeteFinie, setRequeteFinie] = useState<boolean>(false);
     // Fonctions
 
     // Verification des infos et récupérations des données
     const miseEnFormeContenuPortefeuille = async ({ idAction }: { idAction?: null | string }) => {
         const reponse = await requete({ url: `/portefeuille/recuperation-details-un-portefeuille/${id}` });
-
         setDonnees(reponse);
 
         // objet avec une clé string et une valeur du type def
@@ -188,6 +193,26 @@ export default function Portefeuille() {
         verificationAcces();
     }, []);
 
+    // Pour récuperer la date du premier trade lors de l'ajout d'un achat
+    useEffect(() => {
+        const recuperationPremierTrade = async () => {
+            if (action) {
+                console.log(action);
+                const reponse = await requete({ url: `/bourse/recuperation-premier-trade?ticker=${action}` });
+                setPremierTrade(reponse);
+            }
+        };
+        recuperationPremierTrade();
+    }, [action]);
+
+    // Pour récuperer les nouvelles données suite a l'achat
+    useEffect(() => {
+        if (requeteFinie) {
+            miseEnFormeContenuPortefeuille({});
+            setValeurCle((prev) => prev + 1);
+        }
+    }, [requeteFinie]);
+
     if (chargement || !actions || !donnees || !donneesDetail || !pagePrete) return <Chargement />;
 
     return (
@@ -197,17 +222,19 @@ export default function Portefeuille() {
                 <p id="pAucuneTransaction">Aucune transaction enregistrée.</p>
             ) : (
                 <>
-                    <CartePerformances
-                        gainDuJour={{
-                            valeurMonetaire: (Number(donnees.valorisation) * donneesDetail.gainAujourdhui) / 100,
-                            valeurPourcentage: donneesDetail.gainAujourdhui,
-                        }}
-                        gainTotal={{
-                            valeurMonetaire: Number(donnees.valorisation) * (1 + donneesDetail.gainTotal / 100) - Number(donnees.valorisation),
-                            valeurPourcentage: donneesDetail.gainTotal,
-                        }}
-                        devise={donnees?.devise}
-                    />
+                    {donnees.valorisation !== "Calcul impossible" && (
+                        <CartePerformances
+                            gainDuJour={{
+                                valeurMonetaire: (Number(donnees.valorisation) * donneesDetail.gainAujourdhui) / 100,
+                                valeurPourcentage: donneesDetail.gainAujourdhui,
+                            }}
+                            gainTotal={{
+                                valeurMonetaire: Number(donnees.valorisation) * (1 + donneesDetail.gainTotal / 100) - Number(donnees.valorisation),
+                                valeurPourcentage: donneesDetail.gainTotal,
+                            }}
+                            devise={donnees?.devise}
+                        />
+                    )}
 
                     <table>
                         <thead>
@@ -374,9 +401,21 @@ export default function Portefeuille() {
                         </tbody>
                     </table>
 
+                    <a
+                        id="boutonAjouterAchat"
+                        className="bouton"
+                        onClick={() => {
+                            setTypeModal("ajouterAchat");
+                            setAction(null);
+                            setAfficherModal(true);
+                        }}
+                    >
+                        Ajouter un achat
+                    </a>
+
                     <PresentationAction typePresentation="portefeuille" idComposant={id} donneesPortefeuille={{ devise: donnees?.devise ? donnees.devise : null, valorisation: donnees.valorisation }} cleRechargement={valeurCle} />
 
-                    <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)}>
+                    <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)} taille={typeModal == "ajouterAchat" ? 650 : null}>
                         {typeModal == "ajouterVente" && (
                             <div id="divEnregistrerVente">
                                 <h2>Enregistrer une vente</h2>
@@ -435,6 +474,20 @@ export default function Portefeuille() {
                                 <h2>Impossibilité de supprimer l'achat</h2>
                                 <p id="p1">Cette suppression rendrait votre nombre d’actions négatif.</p>
                                 <p id="p2">Supprimez d’abord des ventes pour corriger le solde.</p>
+                            </div>
+                        )}
+                        {typeModal == "ajouterAchat" && (
+                            <div id="divAjouterAchat">
+                                {!action ? (
+                                    <>
+                                        <h2>Ajouter un achat</h2>
+                                        <RechercheAction action={action} setAction={setAction} />
+                                    </>
+                                ) : (
+                                    <>
+                                        <AjouterAchat setAfficherModal={setAfficherModal} setTypeDonneeModal={setTypeModal} ticker={action} typeAchat="portefeuille" premierTrade={premierTrade} idPortefeuille={id} setRequeteFinie={setRequeteFinie} />
+                                    </>
+                                )}
                             </div>
                         )}
                     </Modal>

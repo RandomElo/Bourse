@@ -6,12 +6,13 @@ interface Props {
     estOuvert: boolean;
     children?: ReactNode;
     fermeture: () => void;
+    taille?: number | null;
 }
-export default function Modal({ estOuvert, fermeture, children }: Props) {
+export default function Modal({ estOuvert, fermeture, children, taille }: Props) {
     if (!estOuvert) return null;
     return (
         <div className="Modal" onClick={fermeture}>
-            <div className="modalContenu" onClick={(e) => e.stopPropagation()}>
+            <div className="modalContenu" onClick={(e) => e.stopPropagation()} style={{ width: taille ? taille : undefined }}>
                 <X className="boutonFermer" width={30} height={30} onClick={fermeture} />
                 <div>{children}</div>
             </div>
