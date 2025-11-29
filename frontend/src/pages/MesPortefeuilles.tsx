@@ -3,11 +3,11 @@ import { useAuth } from "../contexts/AuthContext";
 import "../styles/MesPortefeuilles.css";
 import React, { useEffect, useState } from "react";
 import { useRequete } from "../fonctions/requete";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Pencil, Plus, Trash2 } from "lucide-react";
 import RendementAction from "../composants/RendementAction";
 import Modal from "../composants/Modal";
-import AjouterAchat from "../composants/AjouterAchat";
 import CreationPortefeuille from "../composants/CreationPortefeuille";
+import ChampDonneesForm from "../composants/ChampDonneesForm";
 
 export default function MesPortefeuilles() {
     const navigation = useNavigate();
@@ -31,7 +31,9 @@ export default function MesPortefeuilles() {
         }>;
     }> | null>(null);
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
-
+    const [modifierPortefeuilles, setModifierPortefeuilles] = useState<boolean>(false);
+    const [typeModal, setTypeModal] = useState<string>("");
+    const [donneesModal, setDonneesModal] = useState<{ id: number; nom: string } | null>(null);
     // Veification de l'auhtentification
     useEffect(() => {
         if (!estAuth) {
@@ -62,60 +64,165 @@ export default function MesPortefeuilles() {
             <main className="MesPortefeuilles">
                 <h1 id="titre">Mes portefeuilles</h1>
                 {donnees.length != 0 ? (
-                    <table id="tableauPresentationPortefeuilles">
-                        <thead>
-                            <tr>
-                                <th className="celluleNom">Nom</th>
-                                <th className="celluleGain">Gain du jour</th>
-                                <th className="celluleValorisation">Valorisation</th>
-                                <th className="celluleLienDetail"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {donnees.map((portefeuille, index) => (
-                                <tr key={portefeuille.id} className={ligneSurvolee == portefeuille.id ? "survolee" : ""}>
-                                    <td className="celluleNom">{portefeuille.nom}</td>
-                                    {portefeuille.listeTransactions.length > 0 ? (
+                    <>
+                        <table id="tableauPresentationPortefeuilles" className={!modifierPortefeuilles ? "tableauTailleNormal" : "tableauTailleModifications"}>
+                            <thead>
+                                <tr>
+                                    <th className="celluleNom">Nom</th>
+                                    {!modifierPortefeuilles ? (
                                         <>
-                                            <td className="celluleGain">{portefeuille.valorisation !== "Calcul impossible" ? <RendementAction valeur={Number(portefeuille.gainAujourdhui)} valorisation={portefeuille.valorisation} mode="calcul" /> : <RendementAction valeur={Number(portefeuille.gainAujourdhui)} />}</td>
-                                            <td className="celluleValorisation">{portefeuille.valorisation !== "Calcul impossible" ? `${portefeuille.valorisation} ${portefeuille.devise}` : portefeuille.valorisation}</td>
+                                            <th className="celluleGain">Gain du jour</th>
+                                            <th className="celluleValorisation">Valorisation</th>
+                                            <th className="celluleLienDetail"></th>
                                         </>
                                     ) : (
                                         <>
-                                            <td colSpan={2} className="celluleAucuneTransaction">
-                                                Aucune transaction enregistrée.
-                                            </td>
+                                            <th className="celluleModifierNom">Modifier nom</th>
+                                            <th className="celluleSupprimer">Supprimer</th>
                                         </>
                                     )}
-                                    <td
-                                        className="celluleLienDetail"
-                                        onMouseEnter={() => setLigneSurvolee(portefeuille.id)}
-                                        onMouseLeave={() => setLigneSurvolee(null)}
-                                        onClick={() => {
-                                            setLigneSurvolee(null);
-                                            navigation(`/portefeuille/${portefeuille.id}`, {
-                                                state: {
-                                                    donnees: donnees[index],
-                                                },
-                                            });
-                                        }}
-                                    >
-                                        <ArrowRight className="fleche" />
-                                    </td>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {donnees.map((portefeuille, index) => (
+                                    <tr key={portefeuille.id} className={ligneSurvolee == portefeuille.id ? "survolee" : ""}>
+                                        <td className="celluleNom">{portefeuille.nom}</td>
+
+                                        {!modifierPortefeuilles ? (
+                                            <>
+                                                {portefeuille.listeTransactions.length > 0 ? (
+                                                    <>
+                                                        <td className="celluleGain">{portefeuille.valorisation !== "Calcul impossible" ? <RendementAction valeur={Number(portefeuille.gainAujourdhui)} valorisation={portefeuille.valorisation} mode="calcul" /> : <RendementAction valeur={Number(portefeuille.gainAujourdhui)} />}</td>
+                                                        <td className="celluleValorisation">{portefeuille.valorisation !== "Calcul impossible" ? `${portefeuille.valorisation} ${portefeuille.devise}` : portefeuille.valorisation}</td>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <td colSpan={2} className="celluleAucuneTransaction">
+                                                            Aucune transaction enregistrée.
+                                                        </td>
+                                                    </>
+                                                )}
+
+                                                <td
+                                                    className="celluleLienDetail"
+                                                    onMouseEnter={() => setLigneSurvolee(portefeuille.id)}
+                                                    onMouseLeave={() => setLigneSurvolee(null)}
+                                                    onClick={() => {
+                                                        setLigneSurvolee(null);
+                                                        navigation(`/portefeuille/${portefeuille.id}`, {
+                                                            state: {
+                                                                donnees: donnees[index],
+                                                            },
+                                                        });
+                                                    }}
+                                                >
+                                                    <ArrowRight className="fleche" />
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td className="celluleModifierNom">
+                                                    <Pencil
+                                                        id="icone"
+                                                        onClick={() => {
+                                                            setTypeModal("modifierNom");
+                                                            setDonneesModal({ id: portefeuille.id, nom: portefeuille.nom });
+                                                            setAfficherModal(true);
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td className="celluleSupprimer">
+                                                    <Trash2
+                                                        id="icone"
+                                                        onClick={async () => {
+                                                            await requete({ url: `/portefeuille/supprimer`, methode: "DELETE", corps: { id: portefeuille.id } });
+
+                                                            setDonnees((prev) => prev!.filter((item) => item.id !== portefeuille.id));
+                                                            setModifierPortefeuilles(false);
+                                                        }}
+                                                    />
+                                                </td>
+                                            </>
+                                        )}
+                                    </tr>
+                                ))}
+                                {!modifierPortefeuilles && (
+                                    <tr className={`trAjouterPortefeuille ${ligneSurvolee == -1 && "survolee"}`}>
+                                        <td></td>
+                                        <td colSpan={2} id="tdTexte">
+                                            Ajouter un portefeuille
+                                        </td>
+                                        <td
+                                            id="tdIcone"
+                                            onMouseEnter={() => setLigneSurvolee(-1)}
+                                            onMouseLeave={() => setLigneSurvolee(null)}
+                                            onClick={() => {
+                                                setTypeModal("creePortefeuille");
+                                                setAfficherModal(true);
+                                            }}
+                                        >
+                                            <Plus />
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                        {!modifierPortefeuilles ? (
+                            <button id="boutonModifierPortefeuilles" className="bouton" onClick={() => setModifierPortefeuilles(true)}>
+                                Modifier les portefeuilles
+                            </button>
+                        ) : (
+                            <button id="boutonModifierPortefeuilles" className="bouton" onClick={() => setModifierPortefeuilles(false)}>
+                                Sortir des modifications
+                            </button>
+                        )}
+                    </>
                 ) : (
                     <div id="divAucunPortefeuille">
                         <p>Vous n'avez aucun portefeuille enregistré.</p>
-                        <a className="bouton" onClick={() => setAfficherModal(true)}>
+                        <a
+                            className="bouton"
+                            onClick={() => {
+                                setTypeModal("creePortefeuille");
+                                setAfficherModal(true);
+                            }}
+                        >
                             Ajouter portefeuille
                         </a>
                     </div>
                 )}
                 <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)}>
-                    <CreationPortefeuille type="portefeuille" setListePortefeuilleEtTransaction={setDonnees} />
+                    {typeModal == "creePortefeuille" && <CreationPortefeuille type="portefeuille" setListePortefeuilleEtTransaction={setDonnees} />}
+                    {typeModal == "modifierNom" && (
+                        <div id="divEnregistrerVente">
+                            <h2>Modifier le nom</h2>
+                            <form
+                                onSubmit={async (e: React.FormEvent<HTMLFormElement>) => {
+                                    e.preventDefault();
+                                    const nom = e.currentTarget.parentNode!.querySelector<HTMLInputElement>("input")!.value;
+                                    if (nom == donneesModal?.nom) {
+                                        setAfficherModal(false);
+                                    } else {
+                                        const corps = {
+                                            nom,
+                                            id: donneesModal?.id,
+                                        };
+
+                                        await requete({ url: `/portefeuille/modifier-nom`, methode: "POST", corps });
+
+                                        setDonnees((prev) => prev!.map((item) => (item.id === Number(donneesModal?.id) ? { ...item, nom: nom } : item)));
+                                        setModifierPortefeuilles(false);
+                                        setAfficherModal(false);
+                                    }
+                                }}
+                            >
+                                <ChampDonneesForm id="nouveauNom" label="Nouveau nom :" placeholder={donneesModal?.nom} />
+                                <button type="submit" className="bouton">
+                                    Enregistrer
+                                </button>
+                            </form>
+                        </div>
+                    )}
                 </Modal>
             </main>
         );

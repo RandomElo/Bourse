@@ -85,7 +85,6 @@ export default function Portefeuille() {
     const [donnees, setDonnees] = useState<Donnees | null>(null);
     const [donneesDetail, setDonneesDetails] = useState<DonneesDetails>();
     const [actions, setActions] = useState<Array<Action> | null>(null);
-
     const [idLigneSurvolee, setIdLigneSurvolee] = useState<number | null>(null);
     const [idLigneAfficherDetail, setIdLigneAfficherDetails] = useState<number | null>(null);
     const [detailsTransactions, setDetailsTransactions] = useState<TransactionsAction[] | null>(null);
@@ -96,14 +95,12 @@ export default function Portefeuille() {
     const [idLigneTransactionVenteSurvolee, setIdLigneTransactionVenteSurvolee] = useState<number>(-1);
     const [idLigneTransactionAchatSurvolee, setIdLigneTransactionAchatSurvolee] = useState<number>(-1);
     const [attenteSuppression, setAttenteSuppression] = useState<boolean>(false);
-
-    // const [typeModal, setTypeModal] = useState<"ajouterVente" | "problemeSuppressionAchat" | "ajouterAchat" | null>(null);
     const [typeModal, setTypeModal] = useState<string | null>(null);
     const [action, setAction] = useState<string | null>(null);
-
     const [valeurCle, setValeurCle] = useState<number>(0);
     const [premierTrade, setPremierTrade] = useState<string | null>(null);
     const [requeteFinie, setRequeteFinie] = useState<boolean>(false);
+    const [erreurForm, setErreurForm] = useState<string | null>(null);
     // Fonctions
 
     // Verification des infos et récupérations des données
@@ -219,7 +216,19 @@ export default function Portefeuille() {
         <main className="Portefeuille">
             <h1 id="titre">{donnees.nom}</h1>
             {donnees.listeTransactions.length == 0 ? (
-                <p id="pAucuneTransaction">Aucune transaction enregistrée.</p>
+                <div id="divAucuneTransaction">
+                    <p id="pAucuneTransaction">Aucune transaction enregistrée.</p>
+                    <button
+                        className="bouton"
+                        onClick={() => {
+                            setTypeModal("ajouterAchat");
+                            setAction(null);
+                            setAfficherModal(true);
+                        }}
+                    >
+                        Ajouter un achat
+                    </button>
+                </div>
             ) : (
                 <>
                     {donnees.valorisation !== "Calcul impossible" && (
@@ -414,85 +423,88 @@ export default function Portefeuille() {
                     </a>
 
                     <PresentationAction typePresentation="portefeuille" idComposant={id} donneesPortefeuille={{ devise: donnees?.devise ? donnees.devise : null, valorisation: donnees.valorisation }} cleRechargement={valeurCle} />
-
-                    <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)} taille={typeModal == "ajouterAchat" ? 650 : null}>
-                        {typeModal == "ajouterVente" && (
-                            <div id="divEnregistrerVente">
-                                <h2>Enregistrer une vente</h2>
-                                <form
-                                    onSubmit={async (e) => {
-                                        e.preventDefault();
-                                        setChargementRequete(true);
-                                        const quantite = e.currentTarget.querySelector<HTMLInputElement>("#inputQuantite")?.value;
-                                        const prix = e.currentTarget.querySelector<HTMLInputElement>("#inputPrix")?.value;
-                                        const date = e.currentTarget.querySelector<HTMLInputElement>("#inputDate")?.value;
-                                        const contenuRequete = {
-                                            quantite,
-                                            prix,
-                                            date,
-                                            idAction: detailsModal.idAction,
-                                            idPortefeuille: id,
-                                        };
-
-                                        const reponse = await requete({ url: "/portefeuille/enregistrer-vente", methode: "POST", corps: contenuRequete });
-                                        // il faut que je m'occupe de trier les erreurs que peut me retourner le back
-
-                                        const action = await miseEnFormeContenuPortefeuille({ idAction: detailsModal.idAction });
-                                        setDetailsTransactions(action![0].transactions);
-
-                                        setValeurCle((prev) => prev + 1);
-                                        // je doit ajouter le reloader au autre élément (suppression vente et achat)
-
-                                        setTimeout(() => {
-                                            setChargementRequete(false);
-                                        }, 200);
-                                    }}
-                                >
-                                    <div id="divDonneesFormulaires">
-                                        <ChampDonneesForm id="nomAction" label="Nom de l'action :" typeInput="text" value={detailsModal.nom} modificationDesactiver={true} />
-                                        <ChampDonneesForm id="inputQuantite" label="Quantité :" typeInput="number" />
-                                        <ChampDonneesForm id="inputPrix" label="Prix :" typeInput="number" />
-                                        <ChampDonneesForm label="Date :" typeInput="date" id="inputDate" />
-                                    </div>
-                                    <div id="divBoutonEnregistrer">
-                                        <button type="submit" className="bouton">
-                                            {chargementRequete ? (
-                                                <>
-                                                    <Loader2 className="chargement" />
-                                                    <span>Chargement ...</span>
-                                                </>
-                                            ) : (
-                                                "Enregistrer"
-                                            )}
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        )}
-                        {typeModal == "problemeSuppressionAchat" && (
-                            <div id="divProblemeSuppressionAchat">
-                                <h2>Impossibilité de supprimer l'achat</h2>
-                                <p id="p1">Cette suppression rendrait votre nombre d’actions négatif.</p>
-                                <p id="p2">Supprimez d’abord des ventes pour corriger le solde.</p>
-                            </div>
-                        )}
-                        {typeModal == "ajouterAchat" && (
-                            <div id="divAjouterAchat">
-                                {!action ? (
-                                    <>
-                                        <h2>Ajouter un achat</h2>
-                                        <RechercheAction action={action} setAction={setAction} />
-                                    </>
-                                ) : (
-                                    <>
-                                        <AjouterAchat setAfficherModal={setAfficherModal} setTypeDonneeModal={setTypeModal} ticker={action} typeAchat="portefeuille" premierTrade={premierTrade} idPortefeuille={id} setRequeteFinie={setRequeteFinie} />
-                                    </>
-                                )}
-                            </div>
-                        )}
-                    </Modal>
                 </>
             )}
+            <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)} taille={typeModal == "ajouterAchat" ? 650 : null}>
+                {typeModal == "ajouterVente" && (
+                    <div id="divEnregistrerVente">
+                        <h2>Enregistrer une vente</h2>
+                        <form
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                setChargementRequete(true);
+                                const quantite = e.currentTarget.querySelector<HTMLInputElement>("#inputQuantite")?.value;
+                                const prix = e.currentTarget.querySelector<HTMLInputElement>("#inputPrix")?.value;
+                                const date = e.currentTarget.querySelector<HTMLInputElement>("#inputDate")?.value;
+                                const contenuRequete = {
+                                    quantite,
+                                    prix,
+                                    date,
+                                    idAction: detailsModal.idAction,
+                                    idPortefeuille: id,
+                                };
+
+                                const reponse = await requete({ url: "/portefeuille/enregistrer-vente", methode: "POST", corps: contenuRequete });
+
+                                if (reponse.erreur) {
+                                    setErreurForm(reponse.erreur);
+                                } else {
+                                    const action = await miseEnFormeContenuPortefeuille({ idAction: detailsModal.idAction });
+                                    setDetailsTransactions(action![0].transactions);
+
+                                    setValeurCle((prev) => prev + 1);
+                                }
+
+                                setTimeout(() => {
+                                    setChargementRequete(false);
+                                }, 200);
+                            }}
+                        >
+                            <div id="divDonneesFormulaires">
+                                <ChampDonneesForm id="nomAction" label="Nom de l'action :" typeInput="text" value={detailsModal.nom} modificationDesactiver={true} />
+                                <ChampDonneesForm id="inputQuantite" label="Quantité :" typeInput="number" />
+                                <ChampDonneesForm id="inputPrix" label="Prix :" typeInput="number" />
+                                <ChampDonneesForm label="Date :" typeInput="date" id="inputDate" />
+                            </div>
+                            {erreurForm && <p id="pErreurForm">{erreurForm}</p>}
+
+                            <div id="divBoutonEnregistrer">
+                                <button type="submit" id="boutonEnregistrerVente" className="bouton">
+                                    {chargementRequete ? (
+                                        <>
+                                            <Loader2 className="chargement" />
+                                            <span>Chargement ...</span>
+                                        </>
+                                    ) : (
+                                        "Enregistrer"
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+                {typeModal == "problemeSuppressionAchat" && (
+                    <div id="divProblemeSuppressionAchat">
+                        <h2>Impossibilité de supprimer l'achat</h2>
+                        <p id="p1">Cette suppression rendrait votre nombre d’actions négatif.</p>
+                        <p id="p2">Supprimez d’abord des ventes pour corriger le solde.</p>
+                    </div>
+                )}
+                {typeModal == "ajouterAchat" && (
+                    <div id="divAjouterAchat">
+                        {!action ? (
+                            <>
+                                <h2>Ajouter un achat</h2>
+                                <RechercheAction action={action} setAction={setAction} />
+                            </>
+                        ) : (
+                            <>
+                                <AjouterAchat setAfficherModal={setAfficherModal} setTypeDonneeModal={setTypeModal} ticker={action} typeAchat="portefeuille" premierTrade={premierTrade} idPortefeuille={id} setRequeteFinie={setRequeteFinie} />
+                            </>
+                        )}
+                    </div>
+                )}
+            </Modal>
         </main>
     );
 }

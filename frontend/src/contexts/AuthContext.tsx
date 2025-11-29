@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useRequete } from "../fonctions/requete";
-
+import { useNavigate } from "react-router-dom";
 interface AuthContextType {
     estAuth: boolean;
     chargement: boolean;
-    deconnexion: () => Promise<void>;
+    deconnexion: () => void;
     verificationConnexion: () => Promise<void>;
 }
 
@@ -13,11 +13,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [chargement, setChargement] = useState(true);
     const [auth, setAuth] = useState(false);
-    const requete = useRequete();
 
     const verificationConnexion = async () => {
-        const reponse = await requete({ url: "/utilisateur/verification" });
-        setAuth(reponse);
+        const requete = await fetch(import.meta.env.VITE_API_URL_BACKEND + "/utilisateur/verification", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+        });
+
+        const reponse = await requete.json();
+        if (!reponse.etat) {
+            setAuth(false);
+            throw new Error(reponse.detail);
+        } else {
+            setAuth(reponse.detail);
+        }
+
         setChargement(false);
     };
 
@@ -27,9 +38,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => clearInterval(interval);
     }, []);
 
-    const deconnexion = async () => {
-        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-        setUser(null);
+    const deconnexion = () => {
+        setAuth(false);
     };
 
     return <AuthContext.Provider value={{ estAuth: auth, chargement, verificationConnexion, deconnexion }}>{children}</AuthContext.Provider>;

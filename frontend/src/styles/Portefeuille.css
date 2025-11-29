@@ -1,7 +1,14 @@
 .Portefeuille {
-    #pAucuneTransaction {
-        text-align: center;
-        margin-top: 10px;
+    #divAucuneTransaction {
+        #pAucuneTransaction {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        button {
+            display: flex;
+            margin: 0 auto;
+        }
     }
     .CartePerformances {
         margin: 15px auto;
@@ -107,6 +114,13 @@
             #nomAction {
                 cursor: not-allowed;
             }
+        }
+        #pErreurForm {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: red;
+            font-weight: bold;
+            text-align: center;
         }
         #divBoutonEnregistrer {
             margin-top: 15px;

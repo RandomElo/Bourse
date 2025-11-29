@@ -1,7 +1,12 @@
 .MesPortefeuilles {
-    #tableauPresentationPortefeuilles {
-        margin: 15px auto 0 auto;
+    .tableauTailleNormal {
         width: 700px;
+    }
+    .tableauTailleModifications {
+        width: 520px;
+    }
+    #tableauPresentationPortefeuilles {
+        margin: 15px auto 10px auto;
         border-collapse: collapse;
 
         thead {
@@ -16,6 +21,7 @@
             background-color: rgb(241, 241, 241);
         }
         .celluleNom {
+            width: 270px;
             text-align: center;
         }
         .celluleGain {
@@ -34,11 +40,55 @@
             text-align: center;
             font-weight: bold;
         }
+        /* Cellules dans le cas d'une modification */
+        .celluleModifierNom,
+        .celluleSupprimer {
+            text-align: center;
+            #icone:hover {
+                cursor: pointer;
+            }
+        }
+        .trAjouterPortefeuille {
+            height: 15px;
+            font-size: 14px;
+            #tdTexte {
+                text-align: right;
+                /* font-weight: bold; */
+                padding: 10px;
+            }
+            #tdIcone {
+                width: 40px;
+                text-align: center;
+                cursor: pointer;
+            }
+        }
+    }
+    #boutonModifierPortefeuilles {
+        display: flex;
+        margin: 0 auto;
     }
     #divAucunPortefeuille {
         text-align: center;
         p {
-            margin:5px 0 20px;
+            margin: 5px 0 20px;
+        }
+    }
+    #divEnregistrerVente {
+        form {
+            width: 312px;
+            margin: 0 auto;
+            text-align: center;
+            .ChampDonneesForm {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                width: 100%;
+                margin-bottom: 10px;
+                gap: 10px;
+            }
+            .bouton {
+                margin-top: 10px;
+            }
         }
     }
 }

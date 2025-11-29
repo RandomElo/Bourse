@@ -2,6 +2,22 @@
     #boutonSeConnecter {
         color: var(--text-blanc);
     }
+    #divConteneurCotations {
+        margin: 0 auto;
+        width: 848px;
+        height:86px ;
+        #pTitreCotation {
+            margin-left: 10px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        #divApercuCotations {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+    }
 
     #divRechercheActions {
         display: flex;
@@ -105,5 +121,4 @@
             }
         }
     }
-
 }

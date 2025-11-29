@@ -1,7 +1,6 @@
 import { Loader2, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRequete } from "../fonctions/requete";
-
 import "../styles/composants/RechercheAction.css";
 
 type PropsRechercheAction = {
@@ -10,6 +9,7 @@ type PropsRechercheAction = {
 };
 
 export default function RechercheAction({ action, setAction }: PropsRechercheAction) {
+
     const requete = useRequete();
 
     const debounceTimeout = useRef<number | null>(null);

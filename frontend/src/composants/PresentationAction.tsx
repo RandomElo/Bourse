@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRequete } from "../fonctions/requete";
-
 import "../styles/composants/PresentationAction.css";
 import Chargement from "./Chargement";
 import Modal from "./Modal";
@@ -47,8 +46,7 @@ interface DonneesGraphique {
     premierTrade?: string;
 }
 
-export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille, cleRechargement, setAction }: { idComposant: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" }; cleRechargement: number; setAction: React.Dispatch<React.SetStateAction<string | null>> }) {
-    const [afficherModal, setAfficherModal] = useState<boolean>(false);
+export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille, cleRechargement, setAction, afficherModal, setAfficherModal }: { idComposant: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" }; cleRechargement: number; setAction: React.Dispatch<React.SetStateAction<string | null>>; afficherModal: boolean; setAfficherModal: React.Dispatch<React.SetStateAction<boolean>> }) {
     const [typeDonneeModal, setTypeDonneeModal] = useState<"creationPortefeuille" | "achatAction" | null>(null);
 
     const [message, setMessage] = useState<string | null>(null);
@@ -60,6 +58,7 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
     const [donneeeFormCreationPortefeuille, setDonneeFormCreationPortefeuille] = useState<{ prix?: string; nombre?: string; date?: string }>({});
     const [valorisationActuelle, setValorisationActuelle] = useState<null | number>(null);
     const [rendement, setRendement] = useState<number>(0);
+
     const requete = useRequete();
 
     useEffect(() => {
@@ -161,7 +160,7 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
             </div>
             {typePresentation == "action" && (
                 <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)}>
-                    {typeDonneeModal == "achatAction" && <AjouterAchat setAfficherModal={setAfficherModal} setTypeDonneeModal={setTypeDonneeModal} listePortefeuille={listePortefeuille} idAction={idComposant} premierTrade={donnees?.premierTrade} typeAchat="action" />}
+                    {typeDonneeModal == "achatAction" && <AjouterAchat setAfficherModal={setAfficherModal} setTypeDonneeModal={setTypeDonneeModal} listePortefeuille={listePortefeuille} ticker={idComposant} premierTrade={donnees?.premierTrade} typeAchat="action" />}
 
                     {typeDonneeModal == "creationPortefeuille" && <CreationPortefeuille type="achat" setListePortefeuille={setListePortefeuille} setTypeDonneeModal={setTypeDonneeModal} />}
                 </Modal>

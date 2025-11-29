@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useRequete } from "../fonctions/requete";
-
 import "../styles/Accueil.css";
 import { NavLink } from "react-router-dom";
 import { Loader2, Search } from "lucide-react";
 import PresentationAction from "../composants/PresentationAction";
+import ApercuCotation from "../composants/ApercuCotation";
 
 export default function Accueil() {
     const requete = useRequete();
@@ -17,9 +17,36 @@ export default function Accueil() {
     const [action, setAction] = useState<string | null>(null);
     const [recuperationActions, setRecuperationActions] = useState<boolean>(false);
     const [valeurRecherche, setValeurRecherche] = useState<string>("");
+    const [afficherModal, setAfficherModal] = useState<boolean>(false);
+    const [donneesDetailsPortefeuilles, setDonneesDetailsPortefeuilles] = useState<Array<{
+        id: number;
+        nom: string;
+        valorisation: number | "Calcul impossible";
+        devise: string | null;
+        gainTotal: string;
+        gainAujourdhui: string;
+        listeTransactions: Array<{
+            id: number;
+            type: "achat" | "vente";
+            quantite: number;
+            date: string;
+            prixActuel: number;
+            nom: string;
+        }>;
+    }> | null>(null);
     useEffect(() => {
         document.title = "Accueil - Bourse";
     }, []);
+    useEffect(() => {
+        const recuperationPortefeuilles = async () => {
+            const reponse = await requete({ url: "/portefeuille/recuperation-portefeuilles-details" });
+            console.log(reponse);
+            setDonneesDetailsPortefeuilles(reponse);
+        };
+        if (estAuth) {
+            recuperationPortefeuilles();
+        }
+    }, [estAuth]);
 
     // Permet de détecter l'appui sur des touches
 
@@ -51,7 +78,6 @@ export default function Accueil() {
         }, 500); // délai de 500ms
     };
 
-
     useEffect(() => {
         const gestionToucheNavigation = (e: KeyboardEvent) => {
             if (valeurRecherche !== "") {
@@ -70,7 +96,9 @@ export default function Accueil() {
                         break;
                     case "ArrowLeft":
                         if (action) {
-                            setAction(null);
+                            if (!afficherModal) {
+                                setAction(null);
+                            }
                         }
                         break;
                     default:
@@ -80,10 +108,29 @@ export default function Accueil() {
         };
         window.addEventListener("keydown", gestionToucheNavigation);
         return () => window.removeEventListener("keydown", gestionToucheNavigation);
-    }, [listeActions, indexSelectionner, action, valeurRecherche]);
+    }, [listeActions, indexSelectionner, action, valeurRecherche, afficherModal]);
 
     return (
         <main className="Accueil">
+            <div id="divConteneurCotations" style={{ width: donneesDetailsPortefeuilles && donneesDetailsPortefeuilles.length != 0 && donneesDetailsPortefeuilles.filter((portefeuille) => portefeuille.listeTransactions.length !== 0).length !== 0 ? `${donneesDetailsPortefeuilles.length * 212}px` : "848px" }}>
+                {/* Probleme avec la taille je doit regarder  */}
+                {!estAuth || donneesDetailsPortefeuilles?.length == 0 || donneesDetailsPortefeuilles?.filter((portefeuille) => portefeuille.listeTransactions.length !== 0).length == 0 ? (
+                    <>
+                        <p id="pTitreCotation">Performances des marchés :</p>
+                        <div id="divApercuCotations">
+                            <ApercuCotation ticker="^FCHI" />
+                            <ApercuCotation ticker="^GSPC" />
+                            <ApercuCotation ticker="^GDAXI" />
+                            <ApercuCotation ticker="^N225" />
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <p id="pTitreCotation">Mes portefeuilles :</p>
+                        <div id="divApercuCotations">{donneesDetailsPortefeuilles && donneesDetailsPortefeuilles.filter((portefeuille) => portefeuille.listeTransactions.length !== 0).map((portefeuille, index) => <ApercuCotation mode="portefeuille" donneesDefinie={{ nom: portefeuille.nom, valeurActuelle: Number(portefeuille.valorisation), variationPourcentage: Number(portefeuille.gainAujourdhui), devise: portefeuille.devise! }} idPortefeuille={portefeuille.id} key={index} />)}</div>
+                    </>
+                )}
+            </div>
             {!estAuth ? (
                 <>
                     <h1 id="titre">Pour pouvoir profiter de ce service, merci de vous connecter</h1>
@@ -95,6 +142,7 @@ export default function Accueil() {
                 </>
             ) : (
                 <>
+                    {estAuth && donneesDetailsPortefeuilles && <div id="divApercuCotationPortefeuille" style={{ width: `${donneesDetailsPortefeuilles.length * 212}px` }}></div>}
                     <h1 id="titre">Auth</h1>
 
                     <div id="divRechercheActions">
@@ -142,7 +190,7 @@ export default function Accueil() {
                             valeurRecherche !== "" && !recuperationActions && !action && <p id="pAucuneAction">Aucune valeur trouvée. Essayer de chercher la valeur avec son ticker.</p>
                         )}
 
-                        {action && <PresentationAction idComposant={action} setAction={setAction} />}
+                        {action && <PresentationAction idComposant={action} setAction={setAction} afficherModal={afficherModal} setAfficherModal={setAfficherModal} />}
                     </div>
                 </>
             )}

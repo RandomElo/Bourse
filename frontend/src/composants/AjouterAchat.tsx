@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useRequete } from "../fonctions/requete";
 import ChampDonneesForm from "./ChampDonneesForm";
-
 type PropsAjouterAchat = {
     setAfficherModal: React.Dispatch<React.SetStateAction<boolean>>;
     setTypeDonneeModal: React.Dispatch<React.SetStateAction<string | null>>;
@@ -15,7 +14,6 @@ type PropsAjouterAchat = {
 
 export default function AjouterAchat({ setAfficherModal, setTypeDonneeModal, listePortefeuille, ticker, premierTrade, typeAchat, idPortefeuille, setRequeteFinie }: PropsAjouterAchat) {
     const requete = useRequete();
-
     const [erreurFormModal, setErreurFormModal] = useState<string | null>(null);
     const [donneeeFormCreationPortefeuille, setDonneeFormCreationPortefeuille] = useState<{ prix?: string; nombre?: string; date?: string }>({});
 
@@ -74,9 +72,9 @@ export default function AjouterAchat({ setAfficherModal, setTypeDonneeModal, lis
                     {typeAchat == "action" ? (
                         listePortefeuille && listePortefeuille.length > 0 ? (
                             <div id="divSelectionPortefeuille">
-                                <select id="selectNomPortefeuille" defaultValue="" required>
+                                <select id="selectNomPortefeuille" defaultValue={listePortefeuille.length == 1 ? listePortefeuille[0].id : ""} required>
                                     <option value="" disabled>
-                                        -- Séléctionner un portefeuille --
+                                        -- Sélectionner un portefeuille --
                                     </option>
                                     {listePortefeuille?.map((portefeuille, index) => (
                                         <option key={index} value={portefeuille.id}>

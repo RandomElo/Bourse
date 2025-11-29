@@ -1,9 +1,18 @@
-import { useRouteError } from "react-router-dom";
+import { useNavigate, useRouteError } from "react-router-dom";
 import Generale from "./fragments/Generale";
+import { useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function ErreurElement() {
+    const navigation = useNavigate();
+    const { estAuth } = useAuth();
     const erreur = useRouteError() as Error;
 
+    useEffect(() => {
+        if (!estAuth) {
+            navigation("/connexion");
+        }
+    }, [estAuth, navigation]);
     return (
         <Generale>
             <div className="Erreur">

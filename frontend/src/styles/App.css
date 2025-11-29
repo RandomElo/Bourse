@@ -189,10 +189,11 @@ h1#titre {
         }
     }
     #pErreurForm {
-        text-align: center;
+        margin-top: 10px;
         font-size: 0.9em;
         color: red;
         font-weight: bold;
+        text-align: center;
     }
     button {
         display: flex;

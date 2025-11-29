@@ -7,13 +7,13 @@ export const verificationCookie = (req, res, next) => {
                 res.clearCookie("utilisateur");
                 return res.json({ etat: true, detail: "accueil" });
             } else {
-                const utilisateur = await req.Utilisateur.findByPk(decoder.id);
+                const utilisateur = await req.Utilisateur.findByPk(decoder.id, { raw: true });
                 if (utilisateur) {
                     req.idUtilisateur = decoder.id;
                     next();
                 } else {
                     res.clearCookie("utilisateur");
-                    return res.json({ etat: true, detail: "accueil" });
+                    return res.json({ etat: false, detail: "accueil" });
                 }
             }
         });

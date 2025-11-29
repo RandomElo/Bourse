@@ -122,17 +122,30 @@ export const recupererListe = gestionErreur(
 export const enregistrerAchat = gestionErreur(
     async (req, res) => {
         const { nombre, prix, ticker, idPortefeuille, date } = req.body;
-
         // Il faut récupérer la data
 
         const action = await req.Action.findOne({ where: { ticker } });
         // Je verifie que l'action existe
         if (action.id) {
-            const portefeuille = await req.Portefeuille.findByPk(req.idUtilisateur);
+            const portefeuille = await req.Portefeuille.findByPk(idPortefeuille);
             // Je verifie que le protefeuille existe et qu'il apparient au propriétaire
             if (portefeuille && portefeuille.idUtilisateur == req.idUtilisateur) {
                 // Je vérifie la date de l'action
                 if (date > action.premierTrade && date < new Date().toISOString().split("T")[0]) {
+                    // Je vérifie que l'action était trade ce jour
+                    const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
+                    const donneesGraphiques = await finance.chart(ticker, {
+                        period1: `${date} 0:01`,
+                        period2: `${date} 23:59`,
+                        interval: "30m",
+                        return: "object",
+                    });
+
+                    const aEteTrade = donneesGraphiques.indicators.quote.length > 0;
+                    if (!aEteTrade) {
+                        return res.json({ etat: true, detail: { erreur: "Erreur l'action n'a pas été trade le jour donné." } });
+                    }
+
                     await req.Transaction.create({ type: "achat", quantite: nombre, prix, idPortefeuille, idAction: action.id, date });
                     return res.json({ etat: true, detail: true });
                 } else {
@@ -221,7 +234,6 @@ export const recuperationGraphiqueValorisation = gestionErreur(
         const quantitesCumul = {}; // idAction → { date → quantité }
 
         const aujourdHui = new Date();
-
         for (const idAction of Object.keys(actionsMap)) {
             const action = await req.Action.findByPk(idAction, { raw: true });
             if (!action) continue;
@@ -248,7 +260,6 @@ export const recuperationGraphiqueValorisation = gestionErreur(
             const listeDatesCours = Object.keys(historique).sort();
             let quantite = 0;
             const quantParJour = {};
-
             for (const date of listeDatesCours) {
                 // Si une transaction a lieu ce jour
                 const transactionsDuJour = actionsMap[idAction].filter((t) => t.date === date);
@@ -268,7 +279,6 @@ export const recuperationGraphiqueValorisation = gestionErreur(
         const datesReference = Object.values(historiqueActions)[0] ? Object.keys(Object.values(historiqueActions)[0]).sort() : [];
 
         let valorisationTotale = [];
-
         for (const date of datesReference) {
             let somme = 0;
 
@@ -278,7 +288,6 @@ export const recuperationGraphiqueValorisation = gestionErreur(
                 if (prix && quant > 0) somme += prix * quant;
             }
             const sommeFinale = Number(somme.toFixed(2));
-
             if (sommeFinale !== 0) {
                 valorisationTotale.push({
                     date: date,
@@ -308,7 +317,6 @@ export const recuperationGraphiqueValorisation = gestionErreur(
                 valorisationFinale = valorisationTotale;
                 break;
         }
-
         const premierValorisation = Number(valorisationTotale[0].valeur);
         const valorisationHier = Number(valorisationFinale[valorisationFinale.length - 2].valeur);
         const valorisationAujourdhui = Number(valorisationFinale[valorisationFinale.length - 1].valeur);
@@ -362,7 +370,7 @@ export const enregistrerVente = gestionErreur(
         const datePremierAchat = new Date(transactions[0].date);
         if (dateVente < datePremierAchat) {
             return res.json({
-                etat: false,
+                etat: true,
                 detail: { erreur: "La date de vente est antérieure au premier achat." },
             });
         }
@@ -379,7 +387,7 @@ export const enregistrerVente = gestionErreur(
 
         if (quantite > quantiteDetenue) {
             return res.json({
-                etat: false,
+                etat: true,
                 detail: { erreur: "Quantité à vendre supérieure à la quantité détenue." },
             });
         }
@@ -405,7 +413,7 @@ export const enregistrerVente = gestionErreur(
         }
 
         if (quantiteCourante <= 0) {
-            return res.json({ etat: false, detail: { erreur: "Aucune position avant cette date." } });
+            return res.json({ etat: true, detail: { erreur: "Aucune position avant cette date." } });
         }
 
         const prixMoyenUnitaire = coutTotal / quantiteCourante;
@@ -440,4 +448,38 @@ export const suppressionTransaction = gestionErreur(
     },
     "controleursuppressionTransaction",
     "Erreur lors de la suppression de la transaction"
+);
+export const modifierNomPortefeuille = gestionErreur(
+    async (req, res) => {
+        const { nom, id } = req.body;
+        if (!nom || !id) {
+            throw new Error("Élément de requête absent");
+        }
+        const portefeuille = await req.Portefeuille.findByPk(id, { raw: true });
+        if (portefeuille.idUtilisateur !== req.idUtilisateur) {
+            throw new Error("Accès non autoriser");
+        }
+        await req.Portefeuille.update({ nom }, { where: { id } });
+
+        return res.json({ etat: true, detail: true });
+    },
+    "controleurModifierNomPortefeuille",
+    "Erreur lors de la modification du nom du portefeuille"
+);
+export const suppression = gestionErreur(
+    async (req, res) => {
+        const { id } = req.body;
+        if (!id) {
+            throw new Error("Élément de requête absent");
+        }
+        const portefeuille = await req.Portefeuille.findByPk(id, { raw: true });
+        console.log(portefeuille);
+        if (portefeuille.idUtilisateur !== req.idUtilisateur) {
+            throw new Error("Accès non autoriser");
+        }
+        await req.Portefeuille.destroy({ where: { id } });
+        return res.json({ etat: true, detail: true });
+    },
+    "controleurSuppressionPortefeuille",
+    "Erreur lors de la suppression du portefeuille"
 );

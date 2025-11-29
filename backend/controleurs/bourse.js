@@ -296,3 +296,26 @@ export const recuperationPremierTrade = gestionErreur(
     "controleurRecuperationPremierTrade",
     "Erreur lors de la récuépration du premier jour de cotation"
 );
+export const cotation = gestionErreur(
+    async (req, res) => {
+        const { ticker } = req.query;
+        if (!ticker) {
+            throw new Error("Élément de requête absent");
+        }
+        const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
+        const cotation = await finance.quote(ticker);
+
+        return res.json({
+            etat: true,
+            detail: {
+                nom: cotation.longName || cotation.shortName,
+                valeurActuelle: cotation.regularMarketPrice,
+                variationPourcentage: cotation.regularMarketChangePercent,
+                variationMonetaire: cotation.regularMarketChange,
+                devise: cotation.currency,
+            },
+        });
+    },
+    "controleurCotation",
+    "Erreur lors de la récupération de la cotation."
+);

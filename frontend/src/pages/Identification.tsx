@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import ChampDonneesForm from "../composants/ChampDonneesForm";
-
 import "../styles/Identification.css";
 import { useRequete } from "../fonctions/requete";
 
@@ -11,6 +10,7 @@ export default function Identification({ mode }: { mode: "connexion" | "inscript
     const [erreur, setErreur] = useState<{ bloquante: boolean; detail: string } | null>();
     const { estAuth, verificationConnexion, chargement } = useAuth();
     const navigation = useNavigate();
+
     const requete = useRequete();
     const localisation = useLocation();
 
