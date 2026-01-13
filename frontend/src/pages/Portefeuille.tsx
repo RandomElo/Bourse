@@ -9,9 +9,9 @@ import CartePerformances from "../composants/CartePerformances";
 import PresentationAction from "../composants/PresentationAction";
 import Chargement from "../composants/Chargement";
 import Modal from "../composants/Modal";
-import ChampDonneesForm from "../composants/ChampDonneesForm";
 import RechercheAction from "../composants/RechercheAction";
 import AjouterAchat from "../composants/AjouterAchat";
+import AjouterVente from "../composants/AjouterVente";
 
 // Type pour les transactions - reçu dans donner et trier apres pour remoduler les actions
 interface Transactions {
@@ -25,7 +25,7 @@ interface Transactions {
     prixHier: number;
     nom: string;
     devise: string;
-
+    ticker: string;
     gainPourcentage?: number;
     gainValeur?: number;
 }
@@ -41,7 +41,7 @@ interface Donnees {
 }
 
 // Type pour les transactions défini dans actions
-interface TransactionsAction {
+export interface TransactionsAction {
     id: number;
     type: "achat" | "vente";
     quantite: number;
@@ -55,7 +55,7 @@ interface TransactionsAction {
 }
 
 // Type pour les transactions remoduler, où les transaction sont trier par actions
-type Action = {
+export type Action = {
     nom: string;
     idAction: string;
     devise: string;
@@ -65,6 +65,7 @@ type Action = {
     valorisationTotale: number;
     gainJourValeur: number;
     gainJourPourcent: number;
+    ticker: string;
     transactions: TransactionsAction[];
 };
 
@@ -91,7 +92,6 @@ export default function Portefeuille() {
     const [pagePrete, setPagePrete] = useState<boolean>(false);
     const [afficherModal, setAfficherModal] = useState<boolean>(false);
     const [detailsModal, setDetailsModal] = useState<{ nom: string; idAction: string }>({ nom: "", idAction: "" });
-    const [chargementRequete, setChargementRequete] = useState<boolean>(false);
     const [idLigneTransactionVenteSurvolee, setIdLigneTransactionVenteSurvolee] = useState<number>(-1);
     const [idLigneTransactionAchatSurvolee, setIdLigneTransactionAchatSurvolee] = useState<number>(-1);
     const [attenteSuppression, setAttenteSuppression] = useState<boolean>(false);
@@ -100,14 +100,14 @@ export default function Portefeuille() {
     const [valeurCle, setValeurCle] = useState<number>(0);
     const [premierTrade, setPremierTrade] = useState<string | null>(null);
     const [requeteFinie, setRequeteFinie] = useState<boolean>(false);
-    const [erreurForm, setErreurForm] = useState<string | null>(null);
+    const [gainTotal, setGainTotal] = useState<{ pourcentage: number; monetaire: number }>({ pourcentage: 0, monetaire: 0 });
     // Fonctions
 
     // Verification des infos et récupérations des données
     const miseEnFormeContenuPortefeuille = async ({ idAction }: { idAction?: null | string }) => {
         const reponse = await requete({ url: `/portefeuille/recuperation-details-un-portefeuille/${id}` });
-        setDonnees(reponse);
 
+        setDonnees(reponse);
         // objet avec une clé string et une valeur du type def
         const resultats: Record<string, Action> = {};
         reponse.listeTransactions.forEach((transaction: Transactions) => {
@@ -123,6 +123,7 @@ export default function Portefeuille() {
                     valorisationTotale: 0,
                     gainJourValeur: 0,
                     gainJourPourcent: 0,
+                    ticker: transaction.ticker,
                     transactions: [],
                 };
             }
@@ -161,7 +162,7 @@ export default function Portefeuille() {
             action.gainJourValeur = Number((action.valorisationTotale - valorisationHier).toFixed(2));
             action.gainJourPourcent = valorisationHier > 0 ? Number(((action.gainJourValeur / valorisationHier) * 100).toFixed(2)) : 0;
         });
-        setActions(Object.values(resultats));
+        setActions([...Object.values(resultats)]);
 
         // Il faut que je fasse la requete
 
@@ -194,7 +195,6 @@ export default function Portefeuille() {
     useEffect(() => {
         const recuperationPremierTrade = async () => {
             if (action) {
-                console.log(action);
                 const reponse = await requete({ url: `/bourse/recuperation-premier-trade?ticker=${action}` });
                 setPremierTrade(reponse);
             }
@@ -204,13 +204,45 @@ export default function Portefeuille() {
 
     // Pour récuperer les nouvelles données suite a l'achat
     useEffect(() => {
+        console.log("je suis ici");
         if (requeteFinie) {
+            console.log("je suis dans le if");
             miseEnFormeContenuPortefeuille({});
             setValeurCle((prev) => prev + 1);
         }
     }, [requeteFinie]);
 
-    if (chargement || !actions || !donnees || !donneesDetail || !pagePrete) return <Chargement />;
+    useEffect(() => {
+        if (!actions) return;
+        let investiTotal = 0;
+        let valeurActuelleTotal = 0;
+
+        for (const action of actions) {
+            for (const t of action.transactions) {
+                const qte = Number(t.quantite);
+                const gainPct = Number(t.gainTransactionPourcent);
+                const gainVal = Number(t.gainTransactionValeur);
+
+                // Skip si pas de gain
+                if (gainPct === 0) continue;
+
+                // Montant investi réel de cette transaction
+                const investi = gainVal / (gainPct / 100);
+
+                // Valeur actuelle de cette position
+                const valeurActuelle = investi + gainVal;
+
+                investiTotal += investi;
+                valeurActuelleTotal += valeurActuelle;
+            }
+        }
+
+        const rendementTotal = ((valeurActuelleTotal - investiTotal) / investiTotal) * 100;
+
+        setGainTotal({ pourcentage: Number(rendementTotal.toFixed(2)), monetaire: Number((valeurActuelleTotal - investiTotal).toFixed(2)) });
+    }, [actions]);
+
+    if (!actions || !donnees || !donneesDetail || !pagePrete) return <Chargement />;
 
     return (
         <main className="Portefeuille">
@@ -235,11 +267,11 @@ export default function Portefeuille() {
                         <CartePerformances
                             gainDuJour={{
                                 valeurMonetaire: (Number(donnees.valorisation) * donneesDetail.gainAujourdhui) / 100,
-                                valeurPourcentage: donneesDetail.gainAujourdhui,
+                                valeurPourcentage: Number(donneesDetail.gainAujourdhui.toFixed(2)),
                             }}
                             gainTotal={{
-                                valeurMonetaire: Number(donnees.valorisation) * (1 + donneesDetail.gainTotal / 100) - Number(donnees.valorisation),
-                                valeurPourcentage: donneesDetail.gainTotal,
+                                valeurMonetaire: gainTotal.monetaire,
+                                valeurPourcentage: gainTotal.pourcentage,
                             }}
                             devise={donnees?.devise}
                         />
@@ -260,7 +292,9 @@ export default function Portefeuille() {
                             {actions.map((action, index) => (
                                 <React.Fragment key={index}>
                                     <tr id={`tr${index}`} className={`${idLigneSurvolee == index ? "survolee" : ""} ${idLigneAfficherDetail === index ? "actionSelectionnee" : ""}`}>
-                                        <td className="colonneNom">{action.nom}</td>
+                                        <td className="colonneNom caseNom" onClick={() => navigation("/action/" + action.ticker.replace(".", "_"))}>
+                                            {action.nom}
+                                        </td>
                                         <td className="colonnePrix">{action.prix + " " + action.devise}</td>
                                         <td className="colonneCentrer">{action.quantiteTotale}</td>
                                         <td className="colonneCentrer">{action.valorisationTotale.toFixed(2) + " " + action.devise}</td>
@@ -302,19 +336,22 @@ export default function Portefeuille() {
                                                             <td className="colonneCentrer">{transaction.date}</td>
                                                             <td className="colonneCentrer">{transaction.prix + " " + action.devise}</td>
                                                             <td className="colonneCentrer">{transaction.quantite}</td>
-                                                            <td className="colonneCentrer">{transaction.prix * transaction.quantite + " " + action.devise}</td>
+                                                            <td className="colonneCentrer">{(transaction.prix * transaction.quantite).toFixed(2) + " " + action.devise}</td>
                                                             <td>
                                                                 <RendementAction mode={"defini"} valeur={Number(transaction.gainTransactionPourcent)} rendementDevise={Number(transaction.gainTransactionValeur)} />
                                                             </td>
                                                             <td
                                                                 onClick={async () => {
                                                                     if (idLigneTransactionAchatSurvolee == index) {
+                                                                        if (detailsTransactions.length == 1) {
+                                                                            setIdLigneAfficherDetails(null);
+                                                                        }
                                                                         let nbrActionsVendue = 0;
                                                                         const actionsVendue = detailsTransactions.filter((transaction) => transaction.type == "vente");
                                                                         for (const t of actionsVendue) {
                                                                             nbrActionsVendue += t.quantite;
                                                                         }
-                                                                        const nombreActionsRestante = action.quantiteTotale - transaction.quantite;
+                                                                        const nombreActionsRestante = action.quantiteTotale - nbrActionsVendue;
                                                                         if (nombreActionsRestante !== 0 && nombreActionsRestante < transaction.quantite) {
                                                                             setTypeModal("problemeSuppressionAchat");
                                                                             setAfficherModal(true);
@@ -323,19 +360,21 @@ export default function Portefeuille() {
                                                                             // Envoi au back la suppression
                                                                             await requete({ url: "/portefeuille/suppression-transaction", methode: "DELETE", corps: { id: transaction.id } });
                                                                             // Récupération des données mise a jour
+                                                                            setActions(null);
                                                                             const actionMiseAJour = await miseEnFormeContenuPortefeuille({ idAction: action.idAction });
-                                                                            setDetailsTransactions(actionMiseAJour![0].transactions);
-
-                                                                            setValeurCle((prev) => prev + 1);
 
                                                                             setTimeout(() => {
                                                                                 setAttenteSuppression(false);
                                                                             }, 200);
+
+                                                                            setDetailsTransactions(actionMiseAJour![0].transactions);
+
+                                                                            setValeurCle((prev) => prev + 1);
                                                                         }
                                                                     }
                                                                 }}
                                                             >
-                                                                {idLigneTransactionAchatSurvolee == index && <>{attenteSuppression ? <Loader2 className="chargement" /> : <Trash2 />}</>}
+                                                                {idLigneTransactionAchatSurvolee == index && attenteSuppression ? <Loader2 className="chargement" /> : <Trash2 />}
                                                             </td>
                                                         </tr>
                                                     )
@@ -426,63 +465,7 @@ export default function Portefeuille() {
                 </>
             )}
             <Modal estOuvert={afficherModal} fermeture={() => setAfficherModal(false)} taille={typeModal == "ajouterAchat" ? 650 : null}>
-                {typeModal == "ajouterVente" && (
-                    <div id="divEnregistrerVente">
-                        <h2>Enregistrer une vente</h2>
-                        <form
-                            onSubmit={async (e) => {
-                                e.preventDefault();
-                                setChargementRequete(true);
-                                const quantite = e.currentTarget.querySelector<HTMLInputElement>("#inputQuantite")?.value;
-                                const prix = e.currentTarget.querySelector<HTMLInputElement>("#inputPrix")?.value;
-                                const date = e.currentTarget.querySelector<HTMLInputElement>("#inputDate")?.value;
-                                const contenuRequete = {
-                                    quantite,
-                                    prix,
-                                    date,
-                                    idAction: detailsModal.idAction,
-                                    idPortefeuille: id,
-                                };
-
-                                const reponse = await requete({ url: "/portefeuille/enregistrer-vente", methode: "POST", corps: contenuRequete });
-
-                                if (reponse.erreur) {
-                                    setErreurForm(reponse.erreur);
-                                } else {
-                                    const action = await miseEnFormeContenuPortefeuille({ idAction: detailsModal.idAction });
-                                    setDetailsTransactions(action![0].transactions);
-
-                                    setValeurCle((prev) => prev + 1);
-                                }
-
-                                setTimeout(() => {
-                                    setChargementRequete(false);
-                                }, 200);
-                            }}
-                        >
-                            <div id="divDonneesFormulaires">
-                                <ChampDonneesForm id="nomAction" label="Nom de l'action :" typeInput="text" value={detailsModal.nom} modificationDesactiver={true} />
-                                <ChampDonneesForm id="inputQuantite" label="Quantité :" typeInput="number" />
-                                <ChampDonneesForm id="inputPrix" label="Prix :" typeInput="number" />
-                                <ChampDonneesForm label="Date :" typeInput="date" id="inputDate" />
-                            </div>
-                            {erreurForm && <p id="pErreurForm">{erreurForm}</p>}
-
-                            <div id="divBoutonEnregistrer">
-                                <button type="submit" id="boutonEnregistrerVente" className="bouton">
-                                    {chargementRequete ? (
-                                        <>
-                                            <Loader2 className="chargement" />
-                                            <span>Chargement ...</span>
-                                        </>
-                                    ) : (
-                                        "Enregistrer"
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                )}
+                {typeModal == "ajouterVente" && <AjouterVente mode={"pagePortefeuille"} nomAction={detailsModal.nom} idAction={detailsModal.idAction} idPortefeuille={id!} setValeurCle={setValeurCle} miseEnFormePortefeuille={miseEnFormeContenuPortefeuille} setDetailsTransactions={setDetailsTransactions} />}
                 {typeModal == "problemeSuppressionAchat" && (
                     <div id="divProblemeSuppressionAchat">
                         <h2>Impossibilité de supprimer l'achat</h2>
@@ -493,11 +476,13 @@ export default function Portefeuille() {
                 {typeModal == "ajouterAchat" && (
                     <div id="divAjouterAchat">
                         {!action ? (
+                            // Permet la recherche d'action
                             <>
                                 <h2>Ajouter un achat</h2>
                                 <RechercheAction action={action} setAction={setAction} />
                             </>
                         ) : (
+                            // Permet de définir l'achat
                             <>
                                 <AjouterAchat setAfficherModal={setAfficherModal} setTypeDonneeModal={setTypeModal} ticker={action} typeAchat="portefeuille" premierTrade={premierTrade} idPortefeuille={id} setRequeteFinie={setRequeteFinie} />
                             </>

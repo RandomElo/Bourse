@@ -1,5 +1,5 @@
 .CartePerformances {
-    width: 286px;
+    width: 290px;
     margin: auto;
     padding: 10px;
     border: 1px solid black;
@@ -22,7 +22,7 @@
             text-align: left;
         }
         .divCarte {
-            width: 120px;
+            width: 122px;
             padding: 8px;
             border-radius: 8px;
             line-height: 24px;

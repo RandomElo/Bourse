@@ -45,8 +45,16 @@ interface DonneesGraphique {
     rendement?: number;
     premierTrade?: string;
 }
-
-export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille, cleRechargement, setAction, afficherModal, setAfficherModal }: { idComposant: string; typePresentation?: "portefeuille" | "action"; donneesPortefeuille: { devise: string | null; valorisation: number | "Calcul impossible" }; cleRechargement: number; setAction: React.Dispatch<React.SetStateAction<string | null>>; afficherModal: boolean; setAfficherModal: React.Dispatch<React.SetStateAction<boolean>> }) {
+type PropsPresentationAction = {
+    idComposant: string;
+    typePresentation?: "portefeuille" | "action";
+    donneesPortefeuille?: { devise: string | null; valorisation: number | "Calcul impossible" };
+    cleRechargement?: number;
+    afficherModal: boolean;
+    setAfficherModal: React.Dispatch<React.SetStateAction<boolean>>;
+    setDonneesAction?: React.Dispatch<React.SetStateAction<{ valorisation: number; rendement: number; devise: string;nom:string } | null>>;
+};
+export default function PresentationAction({ idComposant, typePresentation = "action", donneesPortefeuille, cleRechargement, afficherModal, setAfficherModal, setDonneesAction }: PropsPresentationAction) {
     const [typeDonneeModal, setTypeDonneeModal] = useState<"creationPortefeuille" | "achatAction" | null>(null);
 
     const [message, setMessage] = useState<string | null>(null);
@@ -78,14 +86,18 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
                     if (!valorisationActuelle) {
                         setValorisationActuelle(reponse.dernierPrix);
                     }
+                    console.log(reponse);
                     setDonnees(reponse);
                     setRendement(reponse.rendement);
+                    if (typePresentation == "action" && setDonneesAction) {
+                        setDonneesAction({ valorisation: reponse.dernierPrix, rendement: Number(reponse.rendement), devise: reponse.devise, nom: reponse.nom });
+                    }
                 }
             } else {
                 const reponse = await requete({ url: `/portefeuille/recuperation-graphique-valorisation?id=${idComposant}&duree=${dureeGraphique}` });
-                console.log(reponse);
 
                 setChargement(false);
+
                 setRendement(Number((((reponse.tableauValorisation[reponse.tableauValorisation.length - 1].valeur - reponse.tableauValorisation[0].valeur) / reponse.tableauValorisation[0].valeur) * 100).toFixed(2)));
                 setDonnees(reponse.tableauValorisation);
             }
@@ -110,10 +122,6 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
             <div className="PresentationAction">
                 {typePresentation == "action" && (
                     <>
-                        <div id="divRetourChampsRecherche" onClick={() => setAction(null)}>
-                            <ArrowLeft id="iconeRetourArriere" width={30} height={30} />
-                            <p>Retour à la recherche</p>
-                        </div>
                         <div id="divHeader">
                             <div id="divIdentifiantAction">
                                 <p id="pTicker">{idComposant}</p>
@@ -142,6 +150,7 @@ export default function PresentationAction({ idComposant, typePresentation = "ac
                     donnees.dernierPrix && (
                         <div id="divPrix">
                             <p id="pPrixAction">
+                                {/* Je doit set valorisation actuelle car j'en ai bessoin dans ma page action */}
                                 {valorisationActuelle} {donnees.devise}
                             </p>
                             <RendementAction valeur={rendement} mode={"defini"} id="pRendementAction" />

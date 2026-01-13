@@ -38,6 +38,7 @@
             width: 280px;
             text-align: center;
         }
+
         .colonnePrix {
             width: 112px;
             text-align: center;
@@ -51,7 +52,12 @@
         .colonneChevron {
             cursor: pointer;
         }
-
+        .caseNom {
+            cursor: pointer;
+        }
+        .caseNom:hover {
+            text-decoration: underline;
+        }
         /* Gestion du style si le détail d'une action est selectionner */
         tbody tr.actionSelectionnee {
             background-color: rgb(241, 241, 241);
@@ -83,57 +89,6 @@
         width: 117px;
     }
     /* Styles pour la modal */
-    #divEnregistrerVente {
-        form {
-            width: 312px;
-            margin: 0 auto;
-        }
-        #divDonneesFormulaires {
-            .ChampDonneesForm {
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                width: 100%;
-                gap: 10px;
-            }
-            #divnomAction,
-            #divinputQuantite,
-            #divinputPrix {
-                text-align: right;
-            }
-            #divinputDate {
-                justify-content: space-between;
-                label {
-                    width: 158px;
-                    text-align: right;
-                }
-                input {
-                    width: 195px;
-                }
-            }
-            #nomAction {
-                cursor: not-allowed;
-            }
-        }
-        #pErreurForm {
-            margin-top: 15px;
-            font-size: 0.9em;
-            color: red;
-            font-weight: bold;
-            text-align: center;
-        }
-        #divBoutonEnregistrer {
-            margin-top: 15px;
-            button {
-                margin: auto;
-                display: flex;
-                align-items: center;
-                .chargement {
-                    margin-right: 10px;
-                }
-            }
-        }
-    }
 
     #divProblemeSuppressionAchat {
         h2 {

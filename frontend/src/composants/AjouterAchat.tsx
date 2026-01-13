@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRequete } from "../fonctions/requete";
 import ChampDonneesForm from "./ChampDonneesForm";
 type PropsAjouterAchat = {
@@ -26,6 +26,9 @@ export default function AjouterAchat({ setAfficherModal, setTypeDonneeModal, lis
         setDonneeFormCreationPortefeuille({ nombre: nbrAction, prix: prixAction, date: dateAchat });
         setTypeDonneeModal("creationPortefeuille");
     };
+    useEffect(() => {
+        if (setRequeteFinie) setRequeteFinie(false);
+    }, []);
 
     return (
         <div id="divAjouterAchat">
@@ -58,6 +61,8 @@ export default function AjouterAchat({ setAfficherModal, setTypeDonneeModal, lis
                         setErreurFormModal(reponse.erreur);
                     } else {
                         if (typeAchat == "portefeuille" && setRequeteFinie) {
+                            setRequeteFinie(false);
+                            console.log(reponse);
                             setRequeteFinie(true);
                         }
                         setAfficherModal(false);
@@ -81,7 +86,6 @@ export default function AjouterAchat({ setAfficherModal, setTypeDonneeModal, lis
                                             {portefeuille.nom}
                                         </option>
                                     ))}
-                                    alstom
                                 </select>
                                 <p>ou</p>
                                 <a onClick={(e) => gestionCliqueCreePortefeuille(e)}>En crée un</a>

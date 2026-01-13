@@ -108,7 +108,73 @@ h1#titre {
 .navbar .navLinks ul li {
     margin: 0 20px;
     list-style: none;
+
+    #divInputRechercheActions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+        .input {
+            width: 190px;
+            height: 26px;
+            margin-top: 0;
+            text-align: center;
+        }
+        .input:focus {
+            border-color: black;
+        }
+        .icone {
+            height: 26px;
+        }
+        .chargement {
+            width: 24px;
+        }
+
+        #divResultat {
+            position: absolute;
+            top: 36px; /* juste sous l'input */
+            left: 0;
+            width: 240px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            /* max-height: 250px; */
+            overflow-y: auto;
+            z-index: 9999;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+
+            .resultat {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 5px 5px;
+                cursor: pointer;
+                font-size: 0.9em;
+                border: 1px solid #f2f2f2;
+                .divPremierColonne {
+                    display: flex;
+                    flex-direction: column;
+                    .nom {
+                        font-weight: bold;
+                    }
+                    .ticker {
+                        font-size: 0.8em;
+                    }
+                }
+            }
+            .resultat:hover {
+                background: #f5f5f5;
+            }
+            .resultat.indexSelectionner {
+                background-color: #f2f2f2;
+            }
+        }
+    }
 }
+
 /* Element particulier  */
 #divChoixEtenduGraphique {
     margin-top: 5px;
@@ -224,6 +290,58 @@ h1#titre {
         #pErreur {
             margin-bottom: 14px;
             text-align: center;
+        }
+    }
+}
+
+#divEnregistrerVente {
+    form {
+        width: 312px;
+        margin: 0 auto;
+    }
+    #divDonneesFormulaires {
+        .ChampDonneesForm {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+        }
+        #divnomAction,
+        #divinputQuantite,
+        #divinputPrix {
+            text-align: right;
+        }
+        #divinputDate {
+            justify-content: space-between;
+            label {
+                width: 158px;
+                text-align: right;
+            }
+            input {
+                width: 195px;
+            }
+        }
+        #nomAction {
+            cursor: not-allowed;
+        }
+    }
+    #pErreurForm {
+        margin-top: 15px;
+        font-size: 0.9em;
+        color: red;
+        font-weight: bold;
+        text-align: center;
+    }
+    #divBoutonEnregistrer {
+        margin-top: 15px;
+        button {
+            margin: auto;
+            display: flex;
+            align-items: center;
+            .chargement {
+                margin-right: 10px;
+            }
         }
     }
 }

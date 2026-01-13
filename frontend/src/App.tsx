@@ -11,6 +11,7 @@ import ErreurRoute from "./pages/ErreurRoute";
 import ErreurElement from "./pages/ErreurElement";
 import MesPortefeuilles from "./pages/MesPortefeuilles";
 import Portefeuille from "./pages/Portefeuille";
+import Action from "./pages/Action";
 
 const router = createBrowserRouter([
     {
@@ -41,6 +42,10 @@ const router = createBrowserRouter([
             {
                 path: "/portefeuille/:id",
                 element: <Portefeuille />,
+            },
+            {
+                path: "/action/:ticker",
+                element: <Action />,
             },
 
             {

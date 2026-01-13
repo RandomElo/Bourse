@@ -40,6 +40,7 @@ const recuperationsDetailsPortefeuille = async (req, idPortefeuille) => {
             prixActuel: quote.regularMarketPrice,
             prixHier: quote.regularMarketPreviousClose,
             devise,
+            ticker: action.ticker,
         };
     });
 
@@ -73,7 +74,7 @@ const recuperationsDetailsPortefeuille = async (req, idPortefeuille) => {
     };
 };
 
-const recuperationDetailsProtefeuilleTransaction = async (req) => {
+const recuperationDetailsPortefeuilleTransaction = async (req) => {
     let portefeuilles = await req.Portefeuille.findAll({
         where: { idUtilisateur: req.idUtilisateur },
         raw: true,
@@ -101,7 +102,7 @@ export const creation = gestionErreur(
         if (type == "achat") {
             return res.json({ etat: true, detail: liste });
         } else {
-            return res.json({ etat: true, detail: await recuperationDetailsProtefeuilleTransaction(req) });
+            return res.json({ etat: true, detail: await recuperationDetailsPortefeuilleTransaction(req) });
         }
     },
     "controleurCreationPortefeuille",
@@ -134,16 +135,25 @@ export const enregistrerAchat = gestionErreur(
                 if (date > action.premierTrade && date < new Date().toISOString().split("T")[0]) {
                     // Je vérifie que l'action était trade ce jour
                     const finance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
+
+                    const d1 = new Date(date);
+                    const d2 = new Date(date);
+                    d2.setDate(d2.getDate() + 1); // +1 jour
+
                     const donneesGraphiques = await finance.chart(ticker, {
-                        period1: `${date} 0:01`,
-                        period2: `${date} 23:59`,
-                        interval: "30m",
+                        period1: d1.toISOString().split("T")[0],
+                        period2: d2.toISOString().split("T")[0],
+                        interval: "1d",
                         return: "object",
                     });
 
-                    const aEteTrade = donneesGraphiques.indicators.quote.length > 0;
-                    if (!aEteTrade) {
-                        return res.json({ etat: true, detail: { erreur: "Erreur l'action n'a pas été trade le jour donné." } });
+                    const prixDisponible = donneesGraphiques?.indicators?.quote?.[0]?.close?.[0] ?? null;
+
+                    if (!prixDisponible) {
+                        return res.json({
+                            etat: true,
+                            detail: { erreur: "Erreur l'action n'a pas été tradée le jour donné." },
+                        });
                     }
 
                     await req.Transaction.create({ type: "achat", quantite: nombre, prix, idPortefeuille, idAction: action.id, date });
@@ -164,7 +174,7 @@ export const enregistrerAchat = gestionErreur(
 
 export const recupererListePortefeuilleEtTransaction = gestionErreur(
     async (req, res) => {
-        return res.json({ etat: true, detail: await recuperationDetailsProtefeuilleTransaction(req) });
+        return res.json({ etat: true, detail: await recuperationDetailsPortefeuilleTransaction(req) });
     },
     "controleurRecuperationListePortefeuilleEtTransaction",
     "Erreur lors de la récupération détaillée des portefeuilles et de leur contenu"
@@ -221,6 +231,7 @@ export const recuperationGraphiqueValorisation = gestionErreur(
         if (transactions.length === 0) {
             return res.json({ etat: true, detail: [] });
         }
+        const premiereDateTransaction = transactions[0].date;
 
         // Regroupement par action
         const actionsMap = {};
@@ -281,7 +292,6 @@ export const recuperationGraphiqueValorisation = gestionErreur(
         let valorisationTotale = [];
         for (const date of datesReference) {
             let somme = 0;
-
             for (const idAction of Object.keys(historiqueActions)) {
                 const prix = historiqueActions[idAction][date];
                 const quant = quantitesCumul[idAction][date] || 0;
@@ -295,6 +305,42 @@ export const recuperationGraphiqueValorisation = gestionErreur(
                 });
             }
         }
+        valorisationTotale = valorisationTotale.filter((v) => v.date >= premiereDateTransaction);
+
+        // ===== Mise à jour de la valorisation avec les cours en temps réel =====
+        const prixTempsReel = {};
+
+        for (const idAction of Object.keys(actionsMap)) {
+            const action = await req.Action.findByPk(idAction, { raw: true });
+            if (!action) continue;
+
+            const { ticker } = action;
+
+            // Cours intraday
+            const tempsReel = await finance.quote(ticker);
+            const dernierPrix = tempsReel?.regularMarketPrice;
+
+            if (dernierPrix) {
+                prixTempsReel[idAction] = Number(dernierPrix);
+            }
+        }
+
+        // Recalcul de la valorisation actuelle à partir des quantités connues du dernier jour historique
+        if (Object.keys(prixTempsReel).length > 0) {
+            const derniereDate = valorisationTotale[valorisationTotale.length - 1].date;
+            let somme = 0;
+
+            for (const idAction of Object.keys(prixTempsReel)) {
+                const quant = quantitesCumul[idAction][derniereDate] || 0;
+                const prix = prixTempsReel[idAction];
+
+                if (quant > 0) somme += quant * prix;
+            }
+
+            // Remplace la dernière valorisation par la version mise à jour
+            valorisationTotale[valorisationTotale.length - 1].valeur = Number(somme.toFixed(2));
+        }
+
         let valorisationFinale;
         switch (duree) {
             case "5 j":
@@ -323,8 +369,8 @@ export const recuperationGraphiqueValorisation = gestionErreur(
         const reponse = {
             nom: portefeuille.nom,
             valorisation: valorisationAujourdhui,
-            gainTotal: Number((((valorisationAujourdhui - premierValorisation) / premierValorisation) * 100).toFixed(2)),
-            gainAujourdhui: Number((((valorisationAujourdhui - valorisationHier) / valorisationHier) * 100).toFixed(2)),
+            gainTotal: ((valorisationAujourdhui - premierValorisation) / premierValorisation) * 100,
+            gainAujourdhui: ((valorisationAujourdhui - valorisationHier) / valorisationHier) * 100,
             tableauValorisation: valorisationFinale,
         };
 
@@ -333,6 +379,7 @@ export const recuperationGraphiqueValorisation = gestionErreur(
     "controleurRecuperationGraphiqueValorisation",
     "Erreur lors de les récupérations des informations sur la valorisation des actifs dans le portefeuilles"
 );
+
 export const enregistrerVente = gestionErreur(
     async (req, res) => {
         const { quantite, prix, date, idAction, idPortefeuille } = req.body;
@@ -482,4 +529,40 @@ export const suppression = gestionErreur(
     },
     "controleurSuppressionPortefeuille",
     "Erreur lors de la suppression du portefeuille"
+);
+export const presenceActionDansPortefeuille = gestionErreur(
+    async (req, res) => {
+        const { ticker } = req.query;
+        if (!ticker) throw new Error("Élément de requête absent");
+
+        const action = await req.Action.findOne({ where: { ticker }, raw: true });
+        if (!action) throw new Error("Action non enregistrée");
+
+        const portefeuillesUtilisateur = await req.Portefeuille.findAll({ where: { idUtilisateur: req.idUtilisateur }, raw: true });
+
+        let quantiteTotal = 0;
+        let tableauListeVentes = [];
+        let valeurTotaleAchat = 0;
+        for (const portefeuille of portefeuillesUtilisateur) {
+            const transactions = await req.Transaction.findAll({ where: { idPortefeuille: portefeuille.id, idAction: action.id }, raw: true });
+            let sommePortefeuille = 0;
+
+            for (const transaction of transactions) {
+                if (transaction.type == "achat") {
+                    sommePortefeuille += transaction.quantite;
+                    valeurTotaleAchat += transaction.quantite * transaction.prix;
+                } else {
+                    sommePortefeuille -= transaction.quantite;
+                    const date = transaction.date.split("-");
+                    const dateFormatee = date[2] + "/" + date[1] + "/" + date[0];
+
+                    tableauListeVentes.push({ quantite: transaction.quantite, prix: transaction.prix, date: dateFormatee, gainValeur: transaction.gainValeur, gainPourcentage: transaction.gainPourcentage });
+                }
+            }
+            quantiteTotal += sommePortefeuille;
+        }
+        return res.json({ etat: true, detail: { quantiteTotal, tableauListeVentes, valeurTotaleAchat } });
+    },
+    "controleurPresenceActionDansPortefeuille",
+    "Erreur lors de la récupération où non de l'action dans vos portefeuilles"
 );

@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useRequete } from "../fonctions/requete";
 import "../styles/Accueil.css";
-import { NavLink } from "react-router-dom";
-import { Loader2, Search } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Loader2, Search, Wallet } from "lucide-react";
 import PresentationAction from "../composants/PresentationAction";
 import ApercuCotation from "../composants/ApercuCotation";
+import RendementAction from "../composants/RendementAction";
 
 export default function Accueil() {
     const requete = useRequete();
+    const navigation = useNavigate();
     const { estAuth } = useAuth();
     const debounceTimeout = useRef<number | null>(null);
 
@@ -34,13 +36,14 @@ export default function Accueil() {
             nom: string;
         }>;
     }> | null>(null);
+    const [portefeuilleSurvole, setPortefeuilleSurvole] = useState<number | null>(null);
+
     useEffect(() => {
         document.title = "Accueil - Bourse";
     }, []);
     useEffect(() => {
         const recuperationPortefeuilles = async () => {
             const reponse = await requete({ url: "/portefeuille/recuperation-portefeuilles-details" });
-            console.log(reponse);
             setDonneesDetailsPortefeuilles(reponse);
         };
         if (estAuth) {
@@ -112,24 +115,16 @@ export default function Accueil() {
 
     return (
         <main className="Accueil">
-            <div id="divConteneurCotations" style={{ width: donneesDetailsPortefeuilles && donneesDetailsPortefeuilles.length != 0 && donneesDetailsPortefeuilles.filter((portefeuille) => portefeuille.listeTransactions.length !== 0).length !== 0 ? `${donneesDetailsPortefeuilles.length * 212}px` : "848px" }}>
-                {/* Probleme avec la taille je doit regarder  */}
-                {!estAuth || donneesDetailsPortefeuilles?.length == 0 || donneesDetailsPortefeuilles?.filter((portefeuille) => portefeuille.listeTransactions.length !== 0).length == 0 ? (
-                    <>
-                        <p id="pTitreCotation">Performances des marchés :</p>
-                        <div id="divApercuCotations">
-                            <ApercuCotation ticker="^FCHI" />
-                            <ApercuCotation ticker="^GSPC" />
-                            <ApercuCotation ticker="^GDAXI" />
-                            <ApercuCotation ticker="^N225" />
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <p id="pTitreCotation">Mes portefeuilles :</p>
-                        <div id="divApercuCotations">{donneesDetailsPortefeuilles && donneesDetailsPortefeuilles.filter((portefeuille) => portefeuille.listeTransactions.length !== 0).map((portefeuille, index) => <ApercuCotation mode="portefeuille" donneesDefinie={{ nom: portefeuille.nom, valeurActuelle: Number(portefeuille.valorisation), variationPourcentage: Number(portefeuille.gainAujourdhui), devise: portefeuille.devise! }} idPortefeuille={portefeuille.id} key={index} />)}</div>
-                    </>
-                )}
+            <div id="divConteneurCotations">
+                <>
+                    <p id="pTitreCotation">Performances des marchés :</p>
+                    <div id="divApercuCotations">
+                        <ApercuCotation ticker="^FCHI" />
+                        <ApercuCotation ticker="^GSPC" />
+                        <ApercuCotation ticker="^GDAXI" />
+                        <ApercuCotation ticker="^N225" />
+                    </div>
+                </>
             </div>
             {!estAuth ? (
                 <>
@@ -142,9 +137,40 @@ export default function Accueil() {
                 </>
             ) : (
                 <>
-                    {estAuth && donneesDetailsPortefeuilles && <div id="divApercuCotationPortefeuille" style={{ width: `${donneesDetailsPortefeuilles.length * 212}px` }}></div>}
                     <h1 id="titre">Auth</h1>
-
+                    <div id="divApercuMesPortfeuilles">
+                        <div id="divTitre">
+                            <Wallet id="iconePortefeuille" />
+                            <p id="pTitre">Vos portefeuilles</p>
+                        </div>
+                        <p id="pValorisation">
+                            {donneesDetailsPortefeuilles
+                                ?.reduce((acc, item) => {
+                                    if (item.valorisation !== "Calcul impossible") {
+                                        return acc + Number(item.valorisation);
+                                    }
+                                    return acc;
+                                }, 0)
+                                .toFixed(2)}{" "}
+                            {"EUR"}
+                        </p>
+                        <div id="divTraitSeparation"></div>
+                        <table>
+                            <tbody>
+                                {donneesDetailsPortefeuilles?.map((portefeuille, index) => (
+                                    <tr key={index} className={index == portefeuilleSurvole ? "portefeuilleSurvole" : ""} onMouseEnter={() => setPortefeuilleSurvole(index)} onMouseLeave={() => setPortefeuilleSurvole(null)} onClick={() => navigation("/portefeuille/" + portefeuille.id)}>
+                                        <td className="tdNom">{portefeuille.nom}</td>
+                                        <td className="tdValorisation">
+                                            {portefeuille.valorisation} {portefeuille.devise}
+                                        </td>
+                                        <td className="tdRendement">
+                                            <RendementAction valeur={Number(portefeuille.gainAujourdhui)} mode={"defini"} />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                     <div id="divRechercheActions">
                         <div id="divInput">
                             <input
@@ -190,7 +216,7 @@ export default function Accueil() {
                             valeurRecherche !== "" && !recuperationActions && !action && <p id="pAucuneAction">Aucune valeur trouvée. Essayer de chercher la valeur avec son ticker.</p>
                         )}
 
-                        {action && <PresentationAction idComposant={action} setAction={setAction} afficherModal={afficherModal} setAfficherModal={setAfficherModal} />}
+                        {action && <PresentationAction idComposant={action} afficherModal={afficherModal} setAfficherModal={setAfficherModal} />}
                     </div>
                 </>
             )}

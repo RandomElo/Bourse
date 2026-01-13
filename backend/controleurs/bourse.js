@@ -96,8 +96,7 @@ export const rechercheAction = gestionErreur(
             const actionsFiltrees = [];
 
             for (const action of resultat.quotes) {
-                if (!action.symbol || action.quoteType !== "EQUITY") continue;
-
+                if (!action.symbol || (action.quoteType !== "EQUITY" && action.quoteType !== "ETF")) continue;
                 const aujourdHui = new Date();
                 const jour = aujourdHui.getDay();
                 const diff = ((jour + 6 - 2) % 7) + 1;
@@ -245,17 +244,36 @@ export const graphique = gestionErreur(
             interval = "1mo";
         }
 
-        // Si c'est nécessaire j'ajoute un date de fin
-        if (["1 m", "6 m", "1 a", "5 a", "MAX"].includes(duree)) {
-            period2 = miseEnFormeDate(aujourdhui);
-        }
-
         let options = {
             period1,
             interval,
             return: "object",
         };
-        if (period2) options.period2 = period2;
+
+        // Fonction utilitaire pour reculer au dernier jour ouvré si samedi/dimanche
+        function dernierJourOuvre(date) {
+            const d = new Date(date);
+            if (d.getDay() === 6) d.setDate(d.getDate() - 1); // samedi → vendredi
+            else if (d.getDay() === 0) d.setDate(d.getDate() - 2); // dimanche → vendredi
+            return d;
+        }
+
+        // Correction des dates pour Yahoo Finance
+        let dateFin = dernierJourOuvre(aujourdhui);
+
+        // Si la durée nécessite period2, on l'ajoute
+        if (["1 m", "6 m", "1 a", "5 a", "MAX"].includes(duree)) {
+            period2 = miseEnFormeDate(dateFin);
+        } else {
+            // Sinon, on corrige period1 pour les week-ends
+            const dateDebut = dernierJourOuvre(new Date(options.period1));
+            options.period1 = miseEnFormeDate(dateDebut);
+        }
+
+        // Ajout de period2 si défini
+        if (period2) {
+            options.period2 = period2;
+        }
 
         const graph = await finance.chart(req.query.ticker, options);
         if (!graph.indicators.quote[0]) {
@@ -269,7 +287,7 @@ export const graphique = gestionErreur(
 
         // Calcul du rendement
         const premierPrix = graph.meta.previousClose ? Number(graph.meta.previousClose) : Number(prixFermeture[0]);
-        let dernierPrix = Number(prixFermeture[prixFermeture.length - 1]);
+        let dernierPrix = Number(prixFermeture[prixFermeture.length - 1]) ? Number(prixFermeture[prixFermeture.length - 1]) : Number(prixFermeture[prixFermeture.length - 2]);
         const rendement = (((dernierPrix - premierPrix) / premierPrix) * 100).toFixed(2);
         dernierPrix = dernierPrix.toFixed(2);
 
